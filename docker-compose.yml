@@ -105,11 +105,10 @@ services:
     image: swaggerapi/swagger-ui:v5.17.14
     environment:
       BASE_URL: /swagger
-      URLS: '[{"url":"/openapi/launch.json","name":"Lançamentos"},{"url":"/openapi/consolidation.json","name":"Consolidado diário"}]'
-      URLS_PRIMARY_NAME: Lançamentos
-      PERSIST_AUTHORIZATION: "true"
-      DISPLAY_REQUEST_DURATION: "true"
-      TRY_IT_OUT_ENABLED: "true"
+    volumes:
+      # Configuração própria: lista as duas APIs e autoriza sozinha com um token de teste.
+      # O log "unable to inject Docker configuration data" é esperado: a configuração vem deste arquivo.
+      - ./infrastructure/swagger-ui/swagger-initializer.js:/usr/share/nginx/html/swagger-initializer.js:ro
 
   # ---------- Observabilidade ----------
   prometheus:

@@ -17,7 +17,7 @@ public class OpenApiConfig {
     OpenAPI openApi() {
         return new OpenAPI()
                 .info(new Info().title("Lançamentos").version("v1")
-                        .description("Registro de créditos e débitos do comerciante. Para testar: execute POST /dev/token (somente ambiente local), copie o access_token, clique em Authorize e cole o token. Todo POST exige o header Idempotency-Key (8 a 100 caracteres)."))
+                        .description("Registro de créditos e débitos do comerciante. No ambiente local a página já abre autorizada com um token de teste; basta usar Try it out e Execute. Todo POST exige o header Idempotency-Key (8 a 100 caracteres): repetir a mesma chave devolve o lançamento original (200), sem duplicar."))
                 // URL relativa: as chamadas da Swagger UI passam pelo gateway que serviu a especificação
                 .servers(List.of(new Server().url("/").description("Gateway")))
                 .components(new Components().addSecuritySchemes("bearer",

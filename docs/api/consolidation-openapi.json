@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Consolidado diário",
-    "description": "Saldo diário consolidado (eventualmente consistente). Gere o token na API de Lançamentos (POST /dev/token) e use em Authorize.",
+    "description": "Saldo diário consolidado (eventualmente consistente). No ambiente local a autorização é automática e vale para as duas APIs.",
     "version": "v1"
   },
   "servers": [

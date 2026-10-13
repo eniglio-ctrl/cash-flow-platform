@@ -17,7 +17,7 @@ public class OpenApiConfig {
     OpenAPI openApi() {
         return new OpenAPI()
                 .info(new Info().title("Consolidado diário").version("v1")
-                        .description("Saldo diário consolidado (eventualmente consistente). Gere o token na API de Lançamentos (POST /dev/token) e use em Authorize."))
+                        .description("Saldo diário consolidado (eventualmente consistente). No ambiente local a autorização é automática e vale para as duas APIs."))
                 // URL relativa: as chamadas da Swagger UI passam pelo gateway que serviu a especificação
                 .servers(List.of(new Server().url("/").description("Gateway")))
                 .components(new Components().addSecuritySchemes("bearer",

@@ -128,11 +128,12 @@ Exemplo de resposta do consolidado:
 
 ### Testando pelo navegador (Swagger UI)
 
-Acesse http://localhost:8080/swagger/. O seletor no topo alterna entre as APIs de Lançamentos e de Consolidado diário.
+Acesse http://localhost:8080/swagger/. A página já abre autorizada: no ambiente local ela obtém sozinha um token de teste em `POST /dev/token` e o reaproveita até expirar. O seletor no topo alterna entre as APIs de Lançamentos e de Consolidado diário.
 
-1. Em Lançamentos, execute `POST /dev/token` e copie o `access_token` da resposta.
-2. Clique em Authorize, cole o token e confirme. A autorização vale para as duas APIs.
-3. Execute `POST /api/v1/lancamentos` (o corpo e a `Idempotency-Key` já vêm com exemplos) e depois, em Consolidado diário, `GET /api/v1/consolidados/{date}`.
+1. Em Lançamentos, abra `POST /api/v1/lancamentos` e clique em Execute. O corpo e a `Idempotency-Key` já vêm preenchidos com exemplos. Executar de novo com a mesma chave devolve 200 com o lançamento original, o que demonstra a idempotência.
+2. Em Consolidado diário, execute `GET /api/v1/consolidados/{date}` com a data do lançamento.
+
+Para testar outro comerciante, use Authorize > Logout e recarregue a página.
 
 As chamadas passam pelo gateway, com o mesmo roteamento e rate limit do uso real. Os contratos OpenAPI 3 ficam versionados em [`docs/api/`](docs/api/) e também são servidos em `/openapi/*.json`.
 
