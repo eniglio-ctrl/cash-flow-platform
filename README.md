@@ -33,7 +33,7 @@ Resumo de como cada requisito central foi tratado. Os detalhes e as alternativas
 Pré-requisitos: Docker (com Compose v2). Para os scripts: `curl` e `jq`. Para rodar testes fora do Docker: JDK 21 e Maven 3.9.
 
 ```bash
-git clone <este-repo> && cd cash-flow-platform
+git clone https://github.com/eniglio-ctrl/cash-flow-platform.git && cd cash-flow-platform
 docker compose up -d --build --wait
 ```
 
