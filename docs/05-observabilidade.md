@@ -1,6 +1,6 @@
 # 5. Monitoramento e observabilidade
 
-A observabilidade deve responder rapidamente: **quantos lançamentos entraram, quantos eventos estão pendentes, qual o atraso do consolidado e onde está a falha.**
+A observabilidade deve responder rapidamente: quantos lançamentos entraram, quantos eventos estão pendentes, qual o atraso do consolidado e onde está a falha.
 
 ## 5.1 Os três pilares
 
@@ -40,12 +40,12 @@ Definidos em [`infrastructure/prometheus/alerts.yml`](../infrastructure/promethe
 | `ConsolidadoDefasado` | consumer lag > 5000 por 5 min | ticket |
 | `MensagensNaDLQ` | qualquer evento na DLQ em 10 min | ticket |
 
-**Error budget** (produção): lançamentos com 99,9%/mês ≈ 43 min; consolidado com 99,5%/mês ≈ 3,6 h. Estourar o budget congela features em favor de confiabilidade.
+Error budget (produção): lançamentos com 99,9%/mês ≈ 43 min; consolidado com 99,5%/mês ≈ 3,6 h. Estourar o budget congela features em favor de confiabilidade.
 
 ## 5.4 Health checks
 
 - `/actuator/health/liveness` e `/actuator/health/readiness` são separados dos endpoints de negócio.
-- No `launch-service`, o **Kafka não compõe a saúde** (`management.health.kafka.enabled=false`). Com o broker fora, o serviço continua *ready* e aceitando lançamentos. Se o health check incluísse o broker, o orquestrador mataria o serviço justamente no cenário em que ele deve continuar de pé.
+- No `launch-service`, o Kafka não compõe a saúde (`management.health.kafka.enabled=false`). Com o broker fora, o serviço continua *ready* e aceitando lançamentos. Se o health check incluísse o broker, o orquestrador mataria o serviço justamente no cenário em que ele deve continuar de pé.
 
 ## 5.5 Runbook resumido
 

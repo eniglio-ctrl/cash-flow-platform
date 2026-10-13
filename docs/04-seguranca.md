@@ -4,19 +4,19 @@
 
 | Ameaça | Exemplo | Mitigação |
 |---|---|---|
-| **S**poofing | Chamar a API se passando por outro comerciante | JWT assinado (validação de assinatura, `iss`, `aud`, `exp`); o `merchant_id` vem do `sub` do token, **nunca do payload**. |
-| **T**ampering | Alterar o valor de um lançamento já registrado | Lançamentos imutáveis (sem PUT/DELETE); correção só por estorno; TLS em trânsito. |
-| **R**epudiation | "Não fui eu que lancei" | Trilha: `created_at`, `traceId`/`X-Request-Id` nos logs, evento imutável no Kafka (retenção) e lançamento imutável no banco. |
-| **I**nformation disclosure | Ler o saldo de outro comerciante | Todas as consultas filtram por `merchant_id` do token. Um id de outro comerciante devolve 404, sem revelar que o recurso existe (teste `comercianteNaoEnxergaLancamentoDeOutro`). |
-| **D**enial of service | Rajada de requisições | Rate limit por token no gateway (429), payload ≤ 16 KB, timeouts, pool de conexões limitado, paginação com teto (200). |
-| **E**levation of privilege | Token de leitura gravando lançamento | Escopos por operação: `lancamentos:write`, `lancamentos:read`, `consolidado:read`, `consolidado:admin`; `denyAll()` por padrão. |
+| Spoofing | Chamar a API se passando por outro comerciante | JWT assinado (validação de assinatura, `iss`, `aud`, `exp`); o `merchant_id` vem do `sub` do token, nunca do payload. |
+| Tampering | Alterar o valor de um lançamento já registrado | Lançamentos imutáveis (sem PUT/DELETE); correção só por estorno; TLS em trânsito. |
+| Repudiation | "Não fui eu que lancei" | Trilha: `created_at`, `traceId`/`X-Request-Id` nos logs, evento imutável no Kafka (retenção) e lançamento imutável no banco. |
+| Information disclosure | Ler o saldo de outro comerciante | Todas as consultas filtram por `merchant_id` do token. Um id de outro comerciante devolve 404, sem revelar que o recurso existe (teste `comercianteNaoEnxergaLancamentoDeOutro`). |
+| Denial of service | Rajada de requisições | Rate limit por token no gateway (429), payload ≤ 16 KB, timeouts, pool de conexões limitado, paginação com teto (200). |
+| Elevation of privilege | Token de leitura gravando lançamento | Escopos por operação: `lancamentos:write`, `lancamentos:read`, `consolidado:read`, `consolidado:admin`; `denyAll()` por padrão. |
 
 ## 4.2 Autenticação e autorização
 
-- **Padrão:** OAuth 2.0 / OIDC. Os serviços são *resource servers* sem estado que validam o JWT localmente (sem chamada ao IdP por requisição).
-- **Local:** tokens HS256 emitidos por `POST /dev/token`, que **só existe com o profile `local`**. Isso evita exigir um Keycloak para avaliar o projeto.
-- **Produção:** RS256/ES256 validados via JWKS do IdP corporativo (Cognito, Entra ID ou Keycloak). A mudança se limita ao bean `JwtDecoder` (`NimbusJwtDecoder.withJwkSetUri`), sem tocar nos controllers.
-- **Escopos:**
+- Padrão: OAuth 2.0 / OIDC. Os serviços são *resource servers* sem estado que validam o JWT localmente (sem chamada ao IdP por requisição).
+- Local: tokens HS256 emitidos por `POST /dev/token`, que só existe com o profile `local`. Isso evita exigir um Keycloak para avaliar o projeto.
+- Produção: RS256/ES256 validados via JWKS do IdP corporativo (Cognito, Entra ID ou Keycloak). A mudança se limita ao bean `JwtDecoder` (`NimbusJwtDecoder.withJwkSetUri`), sem tocar nos controllers.
+- Escopos:
 
 | Escopo | Permite |
 |---|---|
@@ -31,7 +31,7 @@
 |---|---|---|
 | Transporte | TLS 1.2+ terminado no gateway; HSTS | mTLS dentro da malha (service mesh ou ALB interno + TLS) |
 | Identidade | JWT de usuário/aplicação (OIDC) | OAuth2 *client credentials* por serviço; Kafka com SASL/SCRAM ou IAM (MSK) |
-| Autorização | Escopo por rota + isolamento por `merchant_id` | **ACL por tópico**: só o `launch-service` produz em `cashflow.entries.v1`; só o grupo `consolidation-service` consome; só a operação lê a DLQ |
+| Autorização | Escopo por rota + isolamento por `merchant_id` | ACL por tópico: só o `launch-service` produz em `cashflow.entries.v1`; só o grupo `consolidation-service` consome; só a operação lê a DLQ |
 | Contrato | OpenAPI versionado (`/v1`) | Evento versionado (`version`, tópico `.v1`); consumidor rejeita versão desconhecida (vai à DLQ) e nunca aplica um contrato que não entende |
 | Validação | Bean Validation + regras de domínio + chave de idempotência com padrão restrito | Revalidação do evento no consumidor (não confia cegamente no produtor) |
 | Proteção | WAF (OWASP Top 10), rate limit, limite de payload | Quotas de produtor/consumidor no broker |
@@ -40,11 +40,11 @@
 
 ## 4.4 Dados
 
-- **Em trânsito:** TLS em todas as conexões em produção (cliente, banco e broker).
-- **Em repouso:** RDS e MSK com criptografia KMS; backups criptografados.
-- **Menor privilégio no banco:** em produção, um usuário de migração (DDL) separado do de aplicação (DML apenas). O serviço de consolidação não tem nenhum acesso ao banco de lançamentos.
-- **Logs:** sem payload financeiro completo nem tokens; apenas ids (`entryId`, `eventId`, `traceId`).
-- **Precisão:** `NUMERIC(19,2)` e `BigDecimal` de ponta a ponta. O valor trafega como string no evento.
+- Em trânsito: TLS em todas as conexões em produção (cliente, banco e broker).
+- Em repouso: RDS e MSK com criptografia KMS; backups criptografados.
+- Menor privilégio no banco: em produção, um usuário de migração (DDL) separado do de aplicação (DML apenas). O serviço de consolidação não tem nenhum acesso ao banco de lançamentos.
+- Logs: sem payload financeiro completo nem tokens; apenas ids (`entryId`, `eventId`, `traceId`).
+- Precisão: `NUMERIC(19,2)` e `BigDecimal` de ponta a ponta. O valor trafega como string no evento.
 
 ## 4.5 Cadeia de suprimentos e execução
 

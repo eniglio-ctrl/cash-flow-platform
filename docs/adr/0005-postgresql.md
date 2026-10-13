@@ -1,9 +1,10 @@
-# ADR-0005 — PostgreSQL e SQL explícito
+# ADR-0005: PostgreSQL e SQL explícito
 
-**Status:** Aceito
+## Status
+Aceito
 
 ## Decisão
-PostgreSQL 16 nos dois contextos, com migrations Flyway e acesso via `JdbcClient` (Spring JDBC), **sem ORM**.
+PostgreSQL 16 nos dois contextos, com migrations Flyway e acesso via `JdbcClient` (Spring JDBC), sem ORM.
 
 ## Por quê
 - Dinheiro exige `NUMERIC` exato e transações ACID.
@@ -11,9 +12,14 @@ PostgreSQL 16 nos dois contextos, com migrations Flyway e acesso via `JdbcClient
 - Com JPA, essas garantias ficariam escondidas atrás de abstrações (dirty checking, flush order), justamente onde a revisão de código precisa enxergá-las.
 
 ## Alternativas
-- **MongoDB/DynamoDB:** modelos de documento atenderiam o read model, mas o lado transacional com unicidade composta e outbox na mesma transação fica mais complexo.
-- **JPA/Hibernate:** produtivo para CRUD, mas o domínio aqui é pequeno e as consultas são poucas e críticas.
+- MongoDB/DynamoDB: modelos de documento atenderiam o read model, mas o lado transacional com unicidade composta e outbox na mesma transação fica mais complexo.
+- JPA/Hibernate: produtivo para CRUD, mas o domínio aqui é pequeno e as consultas são poucas e críticas.
 
 ## Consequências
-- ➕ SQL revisável, previsível e performático.
-- ➖ Mapeamento manual (pequeno: duas tabelas por serviço).
+Positivas:
+
+- SQL revisável, previsível e performático.
+
+Negativas:
+
+- Mapeamento manual (pequeno: duas tabelas por serviço).

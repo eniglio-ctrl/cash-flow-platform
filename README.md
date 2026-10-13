@@ -1,8 +1,8 @@
 # Cash Flow Platform
 
-Controle de fluxo de caixa de um comerciante: **registro de lançamentos** (débitos e créditos) e **saldo diário consolidado**.
+Controle de fluxo de caixa de um comerciante: registro de lançamentos (débitos e créditos) e saldo diário consolidado.
 
-Solução do desafio de Arquiteto de Soluções. O foco está nas **decisões arquiteturais** (documentadas em [`docs/`](docs/)), mas o código é funcional, testado e roda com um comando.
+Solução para o desafio de Arquiteto de Soluções. As decisões de arquitetura estão documentadas em [`docs/`](docs/), e o código implementa a arquitetura alvo de forma executável: a stack completa sobe com um único comando.
 
 ```mermaid
 flowchart LR
@@ -15,18 +15,22 @@ flowchart LR
     S --> SDB[(PostgreSQL<br/>consolidation)]
 ```
 
-## Em 30 segundos: as decisões que importam
+<sub>Versão em imagem: [00-visao-geral.svg](docs/diagrams/00-visao-geral.svg)</sub>
+
+## Principais decisões
+
+Resumo de como cada requisito central foi tratado. Os detalhes e as alternativas descartadas estão nos [ADRs](docs/adr/).
 
 | Requisito | Decisão | Evidência |
 |---|---|---|
-| Lançamentos **não podem cair** se o consolidado cair | Dois serviços com bancos próprios, integração **assíncrona** e **Transactional Outbox**. O launch não depende nem do broker. | `e2e-resilience.sh`: 100/100 aceitos com o consolidado fora; saldo exato ao voltar |
-| Consolidado com **50 req/s e ≤ 5% de perda** | Read model pré-agregado, cache de TTL curto, réplicas sem estado, gateway com retry e rate limit | k6: **0% de erro**, p95 de 4,5 ms a 50 req/s; 0% a 150 req/s; 0% com uma réplica morta durante a carga |
+| Lançamentos não podem cair se o consolidado cair | Dois serviços com bancos próprios, integração assíncrona e Transactional Outbox. O launch não depende nem do broker. | `e2e-resilience.sh`: 100/100 aceitos com o consolidado fora; saldo exato ao voltar |
+| Consolidado com 50 req/s e ≤ 5% de perda | Read model pré-agregado, cache de TTL curto, réplicas sem estado, gateway com retry e rate limit | k6: 0% de erro, p95 de 4,5 ms a 50 req/s; 0% a 150 req/s; 0% com uma réplica morta durante a carga |
 | Dinheiro não pode duplicar nem sumir | Idempotência na API (`Idempotency-Key`) e no consumidor (`event_id` na mesma transação do saldo); `NUMERIC(19,2)` | Testes com 10 POSTs concorrentes e 400 entregas paralelas |
-| Correções auditáveis | Lançamentos imutáveis; correção por **estorno** | `EntryApiIT.estornaUmaUnicaVez` |
+| Correções auditáveis | Lançamentos imutáveis; correção por estorno | `EntryApiIT.estornaUmaUnicaVez` |
 
 ## Como rodar
 
-**Pré-requisitos:** Docker (com Compose v2). Para os scripts: `curl` e `jq`. Para rodar testes fora do Docker: JDK 21 e Maven 3.9.
+Pré-requisitos: Docker (com Compose v2). Para os scripts: `curl` e `jq`. Para rodar testes fora do Docker: JDK 21 e Maven 3.9.
 
 ```bash
 git clone <este-repo> && cd cash-flow-platform
@@ -43,9 +47,9 @@ O primeiro build baixa as dependências Maven dentro do container (alguns minuto
 | Prometheus | http://localhost:9090 |
 | Jaeger (traces) | http://localhost:16686 |
 
-> Porta ocupada? Use `GATEWAY_PORT=18080 GRAFANA_PORT=13000 PROMETHEUS_PORT=19090 JAEGER_PORT=26686 docker compose up -d --build --wait`.
+> Se alguma porta estiver ocupada, todas são configuráveis: `GATEWAY_PORT=18080 GRAFANA_PORT=13000 PROMETHEUS_PORT=19090 JAEGER_PORT=26686 docker compose up -d --build --wait`. Ao mudar a porta do gateway, exporte também `BASE_URL=http://localhost:18080` antes de rodar os scripts.
 
-### Passeio rápido
+### Demonstração
 
 ```bash
 ./scripts/demo.sh
@@ -130,13 +134,15 @@ Os contratos OpenAPI 3 estão em [`docs/api/`](docs/api/) e são servidos pelo g
 | 1 | [Domínios e capacidades](docs/01-dominio-e-capacidades.md) | Mapa de capacidades, subdomínios (core/genérico), linguagem ubíqua, context map |
 | 2 | [Requisitos](docs/02-requisitos.md) | Premissas, RF, regras de negócio, RNF com metas mensuráveis, interpretação dos 5% |
 | 3 | [Arquitetura alvo](docs/03-arquitetura-alvo.md) | C4 contexto/containers, sequências, modelo de dados, contrato do evento, escalabilidade, matriz de falhas, stack, implantação AWS |
-| 4 | [Segurança](docs/04-seguranca.md) | STRIDE, authN/authZ, **critérios de segurança para integração de serviços** |
+| 4 | [Segurança](docs/04-seguranca.md) | STRIDE, authN/authZ, critérios de segurança para integração de serviços |
 | 5 | [Observabilidade](docs/05-observabilidade.md) | Métricas, SLOs, alertas, health checks, runbook |
 | 6 | [Arquitetura de transição](docs/06-arquitetura-de-transicao.md) | Migração de legado: Strangler Fig + ACL + CDC em fases |
 | 7 | [Custos](docs/07-custos.md) | Estimativa AWS sa-east-1 por ambiente, licenças, alavancas de economia |
 | 8 | [Testes e resultados](docs/08-testes-e-resultados.md) | Pirâmide, casos relevantes, resultados de carga e resiliência |
 | 9 | [Evoluções futuras](docs/09-evolucoes-futuras.md) | Roadmap e decisões a revisitar |
 | — | [ADRs](docs/adr/) | 10 decisões com contexto, alternativas e consequências |
+| — | [Diagramas](docs/diagrams/) | Todos os diagramas exportados em SVG e PNG |
+| — | [Contratos OpenAPI](docs/api/) | Especificação das duas APIs |
 
 ## Estrutura do repositório
 
