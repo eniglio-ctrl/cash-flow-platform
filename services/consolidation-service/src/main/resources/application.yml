@@ -1,0 +1,87 @@
+server:
+  port: 8082
+  shutdown: graceful
+
+spring:
+  application:
+    name: consolidation-service
+  threads:
+    virtual:
+      enabled: true
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5433/consolidation}
+    username: ${DB_USER:consolidation}
+    password: ${DB_PASSWORD:consolidation}
+    hikari:
+      maximum-pool-size: ${DB_POOL_SIZE:20}
+      connection-timeout: 3000
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP:localhost:9092}
+    consumer:
+      group-id: consolidation-service
+      auto-offset-reset: earliest
+      enable-auto-commit: false
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      max-poll-records: 200
+    producer:
+      acks: all
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+    listener:
+      ack-mode: record
+      observation-enabled: true
+    admin:
+      fail-fast: false
+      # Em produção os tópicos são provisionados via IaC; localmente o serviço os cria.
+      auto-create: ${KAFKA_AUTO_CREATE_TOPICS:true}
+      operation-timeout: 5s
+  cache:
+    cache-names: daily-balance,balance-range
+    caffeine:
+      spec: maximumSize=50000,expireAfterWrite=${CACHE_TTL:2s},recordStats
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+    deserialization:
+      fail-on-unknown-properties: false
+
+cashflow:
+  business-zone: America/Sao_Paulo
+  consumer:
+    topic: cashflow.entries.v1
+    max-retries: 4
+    concurrency: 3
+  security:
+    jwt:
+      secret: ${JWT_SECRET:local-dev-secret-change-me-0123456789abcdef}
+      issuer: ${JWT_ISSUER:cashflow-local-idp}
+      audience: ${JWT_AUDIENCE:cashflow-api}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: never
+  metrics:
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
+    tags:
+      application: ${spring.application.name}
+  tracing:
+    enabled: ${TRACING_ENABLED:false}
+    sampling:
+      probability: 1.0
+  otlp:
+    tracing:
+      endpoint: ${OTLP_ENDPOINT:http://localhost:4318/v1/traces}
+
+logging:
+  pattern:
+    correlation: "[${spring.application.name:},%X{traceId:-},%X{spanId:-}] "

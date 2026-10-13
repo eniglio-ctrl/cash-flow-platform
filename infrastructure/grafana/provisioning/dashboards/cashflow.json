@@ -1,0 +1,36 @@
+{
+  "uid": "cashflow-overview",
+  "title": "Cashflow — Visão geral",
+  "schemaVersion": 39,
+  "refresh": "5s",
+  "time": { "from": "now-15m", "to": "now" },
+  "panels": [
+    { "type": "stat", "title": "Lançamentos registrados (5m)", "gridPos": { "x": 0, "y": 0, "w": 6, "h": 4 },
+      "targets": [{ "expr": "sum(increase(cashflow_entries_registered_total[5m]))" }] },
+    { "type": "stat", "title": "Outbox pendente", "gridPos": { "x": 6, "y": 0, "w": 6, "h": 4 },
+      "fieldConfig": { "defaults": { "thresholds": { "mode": "absolute", "steps": [ { "color": "green", "value": null }, { "color": "orange", "value": 100 }, { "color": "red", "value": 1000 } ] } } },
+      "targets": [{ "expr": "max(cashflow_outbox_pending)" }] },
+    { "type": "stat", "title": "Consumer lag (máx)", "gridPos": { "x": 12, "y": 0, "w": 6, "h": 4 },
+      "targets": [{ "expr": "max(kafka_consumer_fetch_manager_records_lag_max{application=\"consolidation-service\"})" }] },
+    { "type": "stat", "title": "Eventos na DLQ (1h)", "gridPos": { "x": 18, "y": 0, "w": 6, "h": 4 },
+      "targets": [{ "expr": "sum(increase(cashflow_consolidation_dlq_total[1h]))" }] },
+
+    { "type": "timeseries", "title": "Requisições/s por serviço e status", "gridPos": { "x": 0, "y": 4, "w": 12, "h": 8 },
+      "targets": [{ "expr": "sum by (application, status) (rate(http_server_requests_seconds_count{uri=~\"/api/.*\"}[1m]))", "legendFormat": "{{application}} {{status}}" }] },
+    { "type": "timeseries", "title": "Latência p95 (s)", "gridPos": { "x": 12, "y": 4, "w": 12, "h": 8 },
+      "targets": [{ "expr": "histogram_quantile(0.95, sum by (le, application) (rate(http_server_requests_seconds_bucket{uri=~\"/api/.*\"}[1m])))", "legendFormat": "{{application}}" }] },
+
+    { "type": "timeseries", "title": "Taxa de erro do GET consolidado (SLO < 1%, limite 5%)", "gridPos": { "x": 0, "y": 12, "w": 12, "h": 8 },
+      "fieldConfig": { "defaults": { "unit": "percentunit" } },
+      "targets": [{ "expr": "sum(rate(http_server_requests_seconds_count{application=\"consolidation-service\",uri=~\"/api/v1/consolidados.*\",status=~\"5..\"}[1m])) / clamp_min(sum(rate(http_server_requests_seconds_count{application=\"consolidation-service\",uri=~\"/api/v1/consolidados.*\"}[1m])), 1e-9)" }] },
+    { "type": "timeseries", "title": "Defasagem do consolidado p95 (registro → saldo)", "gridPos": { "x": 12, "y": 12, "w": 12, "h": 8 },
+      "fieldConfig": { "defaults": { "unit": "s" } },
+      "targets": [{ "expr": "histogram_quantile(0.95, sum by (le) (rate(cashflow_consolidation_freshness_seconds_bucket[1m])))" }] },
+
+    { "type": "timeseries", "title": "Eventos aplicados x duplicados", "gridPos": { "x": 0, "y": 20, "w": 12, "h": 8 },
+      "targets": [{ "expr": "sum by (result) (rate(cashflow_consolidation_events_total[1m]))", "legendFormat": "{{result}}" }] },
+    { "type": "timeseries", "title": "Cache do consolidado — hit ratio", "gridPos": { "x": 12, "y": 20, "w": 12, "h": 8 },
+      "fieldConfig": { "defaults": { "unit": "percentunit" } },
+      "targets": [{ "expr": "sum(rate(cache_gets_total{result=\"hit\",application=\"consolidation-service\"}[1m])) / clamp_min(sum(rate(cache_gets_total{application=\"consolidation-service\"}[1m])), 1e-9)" }] }
+  ]
+}

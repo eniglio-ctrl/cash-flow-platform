@@ -1,0 +1,46 @@
+groups:
+  - name: cashflow-slo
+    rules:
+      - alert: ConsolidadoTaxaDeErroAcimaDoSLO
+        expr: |
+          sum(rate(http_server_requests_seconds_count{application="consolidation-service",uri=~"/api/v1/consolidados.*",status=~"5.."}[5m]))
+          / clamp_min(sum(rate(http_server_requests_seconds_count{application="consolidation-service",uri=~"/api/v1/consolidados.*"}[5m])), 1e-9) > 0.01
+        for: 5m
+        labels: { severity: page }
+        annotations:
+          summary: "Erro no GET de consolidado > 1% (SLO); limite de negócio é 5%"
+
+      - alert: ConsolidadoLatenciaP95Alta
+        expr: |
+          histogram_quantile(0.95, sum by (le) (rate(http_server_requests_seconds_bucket{application="consolidation-service",uri=~"/api/v1/consolidados.*"}[5m]))) > 0.2
+        for: 10m
+        labels: { severity: ticket }
+        annotations:
+          summary: "p95 do consolidado acima de 200 ms"
+
+      - alert: LancamentosIndisponivel
+        expr: up{job="launch-service"} == 0
+        for: 1m
+        labels: { severity: page }
+        annotations:
+          summary: "Serviço de lançamentos sem resposta"
+
+      - alert: OutboxAcumulando
+        expr: max(cashflow_outbox_pending) > 1000
+        for: 5m
+        labels: { severity: page }
+        annotations:
+          summary: "Outbox com mais de 1000 eventos pendentes: broker inacessível?"
+
+      - alert: ConsolidadoDefasado
+        expr: max(kafka_consumer_fetch_manager_records_lag_max{application="consolidation-service"}) > 5000
+        for: 5m
+        labels: { severity: ticket }
+        annotations:
+          summary: "Consumer lag do consolidado alto: saldo defasado"
+
+      - alert: MensagensNaDLQ
+        expr: sum(increase(cashflow_consolidation_dlq_total[10m])) > 0
+        labels: { severity: ticket }
+        annotations:
+          summary: "Eventos enviados à DLQ do consolidado: investigar e reprocessar (POST /api/v1/admin/dlq/replay)"

@@ -1,0 +1,90 @@
+server:
+  port: 8081
+  shutdown: graceful
+
+spring:
+  application:
+    name: launch-service
+  threads:
+    virtual:
+      enabled: true
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/launch}
+    username: ${DB_USER:launch}
+    password: ${DB_PASSWORD:launch}
+    hikari:
+      maximum-pool-size: ${DB_POOL_SIZE:20}
+      connection-timeout: 3000
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP:localhost:9092}
+    producer:
+      acks: all
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      properties:
+        enable.idempotence: true
+        max.block.ms: 5000
+        delivery.timeout.ms: 10000
+        request.timeout.ms: 5000
+    admin:
+      fail-fast: false
+      # Em produção os tópicos são provisionados via IaC; localmente o serviço os cria.
+      auto-create: ${KAFKA_AUTO_CREATE_TOPICS:true}
+      operation-timeout: 5s
+      properties:
+        request.timeout.ms: 5000
+    template:
+      observation-enabled: true
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+  mvc:
+    problemdetails:
+      enabled: true
+
+cashflow:
+  business-zone: America/Sao_Paulo
+  outbox:
+    topic: cashflow.entries.v1
+    batch-size: 100
+    send-timeout: 5s
+    retention: 7d
+    poll-interval: 500
+  security:
+    jwt:
+      # Apenas para desenvolvimento local. Em produção vem de um secret manager (ver docs/04-seguranca.md).
+      secret: ${JWT_SECRET:local-dev-secret-change-me-0123456789abcdef}
+      issuer: ${JWT_ISSUER:cashflow-local-idp}
+      audience: ${JWT_AUDIENCE:cashflow-api}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: never
+  health:
+    # O broker NÃO compõe a saúde do serviço: com Kafka fora, lançamentos continuam sendo aceitos.
+    kafka:
+      enabled: false
+  metrics:
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
+    tags:
+      application: ${spring.application.name}
+  tracing:
+    enabled: ${TRACING_ENABLED:false}
+    sampling:
+      probability: 1.0
+  otlp:
+    tracing:
+      endpoint: ${OTLP_ENDPOINT:http://localhost:4318/v1/traces}
+
+logging:
+  pattern:
+    correlation: "[${spring.application.name:},%X{traceId:-},%X{spanId:-}] "
