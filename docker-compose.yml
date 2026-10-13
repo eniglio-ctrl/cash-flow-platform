@@ -97,8 +97,19 @@ services:
     ports: ["${GATEWAY_PORT:-8080}:8080"]
     volumes:
       - ./infrastructure/gateway/nginx.conf:/etc/nginx/nginx.conf:ro
-    depends_on: [launch-service, consolidation-service]
+    depends_on: [launch-service, consolidation-service, swagger-ui]
     restart: unless-stopped
+
+  # Documentação interativa das APIs, servida pelo gateway em /swagger/
+  swagger-ui:
+    image: swaggerapi/swagger-ui:v5.17.14
+    environment:
+      BASE_URL: /swagger
+      URLS: '[{"url":"/openapi/launch.json","name":"Lançamentos"},{"url":"/openapi/consolidation.json","name":"Consolidado diário"}]'
+      URLS_PRIMARY_NAME: Lançamentos
+      PERSIST_AUTHORIZATION: "true"
+      DISPLAY_REQUEST_DURATION: "true"
+      TRY_IT_OUT_ENABLED: "true"
 
   # ---------- Observabilidade ----------
   prometheus:

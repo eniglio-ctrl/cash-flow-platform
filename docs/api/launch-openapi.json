@@ -1,21 +1,34 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "Launch Service — Lançamentos",
+    "title": "Lançamentos",
+    "description": "Registro de créditos e débitos do comerciante. Para testar: execute POST /dev/token (somente ambiente local), copie o access_token, clique em Authorize e cole o token. Todo POST exige o header Idempotency-Key (8 a 100 caracteres).",
     "version": "v1"
   },
   "servers": [
     {
-      "url": "http://localhost",
-      "description": "Generated server url"
+      "url": "/",
+      "description": "Gateway"
+    }
+  ],
+  "tags": [
+    {
+      "name": "lancamentos",
+      "description": "Registro, estorno e consulta de lançamentos"
+    },
+    {
+      "name": "dev-token",
+      "description": "Emissão de token para testes locais (substitui o IdP)"
     }
   ],
   "paths": {
     "/dev/token": {
       "post": {
         "tags": [
-          "dev-token-controller"
+          "dev-token"
         ],
+        "summary": "Gera um JWT de teste (somente profile local)",
+        "description": "Sem merchantId, cria um comerciante novo. Copie o access_token e use em Authorize.",
         "operationId": "token",
         "parameters": [
           {
@@ -57,7 +70,7 @@
     "/api/v1/lancamentos": {
       "get": {
         "tags": [
-          "entry-controller"
+          "lancamentos"
         ],
         "summary": "Lista os lançamentos de uma data",
         "operationId": "list",
@@ -69,7 +82,8 @@
             "schema": {
               "type": "string",
               "format": "date"
-            }
+            },
+            "example": "2026-10-13"
           },
           {
             "name": "page",
@@ -118,7 +132,7 @@
       },
       "post": {
         "tags": [
-          "entry-controller"
+          "lancamentos"
         ],
         "summary": "Registra um crédito ou débito",
         "description": "Idempotente pela Idempotency-Key: repetir a mesma requisição retorna o lançamento original (200).",
@@ -127,11 +141,13 @@
           {
             "name": "Idempotency-Key",
             "in": "header",
+            "description": "Chave única por intenção de lançamento (8 a 100 caracteres)",
             "required": true,
             "schema": {
               "type": "string",
               "pattern": "^[A-Za-z0-9_\\-:.]{8,100}$"
-            }
+            },
+            "example": "venda-0001-2026-10-13"
           }
         ],
         "requestBody": {
@@ -166,7 +182,7 @@
     "/api/v1/lancamentos/{id}/estornos": {
       "post": {
         "tags": [
-          "entry-controller"
+          "lancamentos"
         ],
         "summary": "Estorna um lançamento (cria lançamento inverso na data de hoje)",
         "operationId": "reverse",
@@ -187,7 +203,8 @@
             "schema": {
               "type": "string",
               "pattern": "^[A-Za-z0-9_\\-:.]{8,100}$"
-            }
+            },
+            "example": "estorno-0001-2026-10-13"
           }
         ],
         "requestBody": {
@@ -221,7 +238,7 @@
     "/api/v1/lancamentos/{id}": {
       "get": {
         "tags": [
-          "entry-controller"
+          "lancamentos"
         ],
         "operationId": "get",
         "parameters": [

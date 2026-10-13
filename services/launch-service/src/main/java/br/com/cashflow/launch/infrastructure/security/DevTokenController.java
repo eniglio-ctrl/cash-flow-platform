@@ -1,6 +1,8 @@
 package br.com.cashflow.launch.infrastructure.security;
 
 import com.nimbusds.jose.jwk.source.ImmutableSecret;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Profile;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
@@ -25,6 +27,7 @@ import java.util.UUID;
  */
 @RestController
 @Profile("local")
+@Tag(name = "dev-token", description = "Emissão de token para testes locais (substitui o IdP)")
 public class DevTokenController {
 
     private static final String DEFAULT_SCOPES = "lancamentos:write lancamentos:read consolidado:read";
@@ -43,6 +46,8 @@ public class DevTokenController {
     }
 
     @PostMapping("/dev/token")
+    @Operation(summary = "Gera um JWT de teste (somente profile local)",
+            description = "Sem merchantId, cria um comerciante novo. Copie o access_token e use em Authorize.")
     public Map<String, Object> token(@RequestParam(required = false) UUID merchantId,
                                      @RequestParam(defaultValue = DEFAULT_SCOPES) String scope) {
         UUID merchant = merchantId != null ? merchantId : UUID.randomUUID();

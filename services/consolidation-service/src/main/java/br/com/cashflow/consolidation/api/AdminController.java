@@ -3,6 +3,7 @@ package br.com.cashflow.consolidation.api;
 import br.com.cashflow.consolidation.infrastructure.messaging.DeadLetterReplayService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -13,6 +14,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/v1/admin")
 @SecurityRequirement(name = "bearer")
+@Tag(name = "admin", description = "Operação: reprocessamento da DLQ")
 public class AdminController {
 
     private final DeadLetterReplayService replay;

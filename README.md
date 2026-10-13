@@ -42,6 +42,7 @@ O primeiro build baixa as dependências Maven dentro do container (alguns minuto
 | O quê | URL |
 |---|---|
 | API (via gateway) | http://localhost:8080 |
+| Swagger UI (as duas APIs, com "Try it out") | http://localhost:8080/swagger/ |
 | Contratos OpenAPI | http://localhost:8080/openapi/launch.json · http://localhost:8080/openapi/consolidation.json (cópias versionadas em [`docs/api/`](docs/api/)) |
 | Grafana (dashboard "Cashflow — Visão geral") | http://localhost:3000 |
 | Prometheus | http://localhost:9090 |
@@ -125,7 +126,15 @@ Exemplo de resposta do consolidado:
 }
 ```
 
-Os contratos OpenAPI 3 estão em [`docs/api/`](docs/api/) e são servidos pelo gateway em `/openapi/*.json`. Para navegar, abra-os no [Swagger Editor](https://editor.swagger.io). Rodando um serviço fora do Docker, a Swagger UI fica em `/swagger-ui.html`.
+### Testando pelo navegador (Swagger UI)
+
+Acesse http://localhost:8080/swagger/. O seletor no topo alterna entre as APIs de Lançamentos e de Consolidado diário.
+
+1. Em Lançamentos, execute `POST /dev/token` e copie o `access_token` da resposta.
+2. Clique em Authorize, cole o token e confirme. A autorização vale para as duas APIs.
+3. Execute `POST /api/v1/lancamentos` (o corpo e a `Idempotency-Key` já vêm com exemplos) e depois, em Consolidado diário, `GET /api/v1/consolidados/{date}`.
+
+As chamadas passam pelo gateway, com o mesmo roteamento e rate limit do uso real. Os contratos OpenAPI 3 ficam versionados em [`docs/api/`](docs/api/) e também são servidos em `/openapi/*.json`.
 
 ## Documentação de arquitetura
 
@@ -152,7 +161,7 @@ cash-flow-platform/
 │   ├── launch-service/          # Contexto Gestão de Lançamentos (API + Outbox relay)
 │   └── consolidation-service/   # Contexto Consolidação (consumer + read model + API de leitura)
 ├── infrastructure/
-│   ├── gateway/                 # nginx: roteamento, rate limit, retry
+│   ├── gateway/                 # nginx: roteamento, rate limit, retry, Swagger UI
 │   ├── prometheus/              # scrape + regras de alerta (SLOs)
 │   └── grafana/                 # datasource e dashboard provisionados
 ├── loadtest/                    # k6 (50 e 150 req/s) + resultados

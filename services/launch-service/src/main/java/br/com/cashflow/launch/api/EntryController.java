@@ -4,7 +4,9 @@ import br.com.cashflow.launch.application.EntryResult;
 import br.com.cashflow.launch.application.EntryService;
 import br.com.cashflow.launch.application.RegisterEntryCommand;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -37,6 +39,7 @@ import java.util.UUID;
 @Validated
 @RequestMapping("/api/v1/lancamentos")
 @SecurityRequirement(name = "bearer")
+@Tag(name = "lancamentos", description = "Registro, estorno e consulta de lançamentos")
 public class EntryController {
 
     private static final String KEY_PATTERN = "^[A-Za-z0-9_\\-:.]{8,100}$";
@@ -51,6 +54,7 @@ public class EntryController {
     @Operation(summary = "Registra um crédito ou débito",
             description = "Idempotente pela Idempotency-Key: repetir a mesma requisição retorna o lançamento original (200).")
     public ResponseEntity<EntryResponse> register(@AuthenticationPrincipal Jwt jwt,
+                                                  @Parameter(description = "Chave única por intenção de lançamento (8 a 100 caracteres)", example = "venda-0001-2026-10-13")
                                                   @RequestHeader("Idempotency-Key") @Pattern(regexp = KEY_PATTERN) String key,
                                                   @Valid @RequestBody EntryRequest body) {
         EntryResult result = service.register(new RegisterEntryCommand(merchant(jwt), key, body.date(),
@@ -62,6 +66,7 @@ public class EntryController {
     @Operation(summary = "Estorna um lançamento (cria lançamento inverso na data de hoje)")
     public ResponseEntity<EntryResponse> reverse(@AuthenticationPrincipal Jwt jwt,
                                                  @PathVariable UUID id,
+                                                 @Parameter(example = "estorno-0001-2026-10-13")
                                                  @RequestHeader("Idempotency-Key") @Pattern(regexp = KEY_PATTERN) String key,
                                                  @Valid @RequestBody(required = false) ReversalRequest body) {
         String reason = body == null ? null : body.reason();
@@ -76,7 +81,7 @@ public class EntryController {
     @GetMapping
     @Operation(summary = "Lista os lançamentos de uma data")
     public List<EntryResponse> list(@AuthenticationPrincipal Jwt jwt,
-                                    @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+                                    @Parameter(example = "2026-10-13") @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
                                     @RequestParam(defaultValue = "0") @Min(0) int page,
                                     @RequestParam(defaultValue = "50") @Min(1) @Max(200) int size) {
         return service.listByDate(merchant(jwt), date, page, size).stream().map(EntryResponse::from).toList();

@@ -3,7 +3,9 @@ package br.com.cashflow.consolidation.api;
 import br.com.cashflow.consolidation.application.BalanceQueryService;
 import br.com.cashflow.consolidation.domain.DailyBalance;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.CacheControl;
 import org.springframework.http.ResponseEntity;
@@ -22,6 +24,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/v1/consolidados")
 @SecurityRequirement(name = "bearer")
+@Tag(name = "consolidados", description = "Saldo consolidado por dia e por período")
 public class BalanceController {
 
     private final BalanceQueryService service;
@@ -34,15 +37,15 @@ public class BalanceController {
     @Operation(summary = "Saldo consolidado de um dia",
             description = "Eventualmente consistente: o cabeçalho X-Consistency informa o modelo.")
     public ResponseEntity<DailyBalance> day(@AuthenticationPrincipal Jwt jwt,
-                                            @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+                                            @Parameter(example = "2026-10-13") @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
         return ok(service.day(merchant(jwt), date));
     }
 
     @GetMapping
     @Operation(summary = "Saldos consolidados de um intervalo (máx. 31 dias)")
     public ResponseEntity<List<DailyBalance>> range(@AuthenticationPrincipal Jwt jwt,
-                                                    @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
-                                                    @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
+                                                    @Parameter(example = "2026-10-01") @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+                                                    @Parameter(example = "2026-10-13") @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
         return ok(service.range(merchant(jwt), from, to));
     }
 
