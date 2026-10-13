@@ -1,153 +1,225 @@
 {
-  "openapi": "3.1.0",
-  "info": {
-    "title": "Lançamentos",
-    "description": "Registro de créditos e débitos do comerciante. No ambiente local a página já abre autorizada com um token de teste; basta usar Try it out e Execute. Todo POST exige o header Idempotency-Key (8 a 100 caracteres): repetir a mesma chave devolve o lançamento original (200), sem duplicar.",
-    "version": "v1"
-  },
-  "servers": [
-    {
-      "url": "/",
-      "description": "Gateway"
-    }
-  ],
-  "tags": [
-    {
-      "name": "lancamentos",
-      "description": "Registro, estorno e consulta de lançamentos"
-    },
-    {
-      "name": "dev-token",
-      "description": "Emissão de token para testes locais (substitui o IdP)"
-    }
-  ],
-  "paths": {
-    "/dev/token": {
-      "post": {
-        "tags": [
-          "dev-token"
-        ],
-        "summary": "Gera um JWT de teste (somente profile local)",
-        "description": "Sem merchantId, cria um comerciante novo. Copie o access_token e use em Authorize.",
-        "operationId": "token",
-        "parameters": [
-          {
-            "name": "merchantId",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
+  "components": {
+    "schemas": {
+      "EntryRequest": {
+        "properties": {
+          "amount": {
+            "description": "Valor positivo, no máximo 2 casas decimais. O tipo define o sinal.",
+            "example": 150.75,
+            "minimum": 0.01,
+            "type": "number"
           },
-          {
-            "name": "scope",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "default": "lancamentos:write lancamentos:read consolidado:read"
-            }
+          "date": {
+            "description": "Data financeira no fuso do comerciante. Não pode ser futura nem anterior a 365 dias.",
+            "example": "2026-10-13",
+            "format": "date",
+            "type": "string"
+          },
+          "description": {
+            "description": "Obrigatória e não pode ser vazia.",
+            "example": "Venda balcão",
+            "maxLength": 200,
+            "minLength": 0,
+            "type": "string"
+          },
+          "type": {
+            "enum": [
+              "CREDIT",
+              "DEBIT"
+            ],
+            "example": "CREDIT",
+            "type": "string"
           }
+        },
+        "required": [
+          "amount",
+          "date",
+          "description",
+          "type"
         ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "type": "object",
-                  "additionalProperties": {
-                    "type": "object"
-                  }
-                }
-              }
-            }
+        "type": "object"
+      },
+      "EntryResponse": {
+        "properties": {
+          "amount": {
+            "type": "number"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "date": {
+            "format": "date",
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "reversalOf": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
           }
-        }
+        },
+        "type": "object"
+      },
+      "ProblemDetail": {
+        "properties": {
+          "detail": {
+            "type": "string"
+          },
+          "instance": {
+            "format": "uri",
+            "type": "string"
+          },
+          "properties": {
+            "additionalProperties": {
+              "type": "object"
+            },
+            "type": "object"
+          },
+          "status": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "title": {
+            "type": "string"
+          },
+          "type": {
+            "format": "uri",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "ReversalRequest": {
+        "properties": {
+          "reason": {
+            "maxLength": 200,
+            "minLength": 0,
+            "type": "string"
+          }
+        },
+        "type": "object"
       }
     },
+    "securitySchemes": {
+      "bearer": {
+        "bearerFormat": "JWT",
+        "scheme": "bearer",
+        "type": "http"
+      }
+    }
+  },
+  "info": {
+    "description": "Registro de créditos e débitos do comerciante. No ambiente local a página já abre autorizada com um token de teste; basta usar Try it out e Execute. Todo POST exige o header Idempotency-Key (8 a 100 caracteres): repetir a mesma chave devolve o lançamento original (200), sem duplicar.",
+    "title": "Lançamentos",
+    "version": "v1"
+  },
+  "openapi": "3.1.0",
+  "paths": {
     "/api/v1/lancamentos": {
       "get": {
-        "tags": [
-          "lancamentos"
-        ],
-        "summary": "Lista os lançamentos de uma data",
         "operationId": "list",
         "parameters": [
           {
-            "name": "date",
+            "example": "2026-10-13",
             "in": "query",
+            "name": "date",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "date"
-            },
-            "example": "2026-10-13"
-          },
-          {
-            "name": "page",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "format": "int32",
-              "default": 0,
-              "minimum": 0
+              "format": "date",
+              "type": "string"
             }
           },
           {
-            "name": "size",
             "in": "query",
+            "name": "page",
             "required": false,
             "schema": {
-              "type": "integer",
+              "default": 0,
               "format": "int32",
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "size",
+            "required": false,
+            "schema": {
               "default": 50,
+              "format": "int32",
               "maximum": 200,
-              "minimum": 1
+              "minimum": 1,
+              "type": "integer"
             }
           }
         ],
         "responses": {
           "200": {
-            "description": "OK",
             "content": {
-              "*/*": {
+              "application/json": {
                 "schema": {
-                  "type": "array",
                   "items": {
                     "$ref": "#/components/schemas/EntryResponse"
-                  }
+                  },
+                  "type": "array"
                 }
               }
-            }
+            },
+            "description": "Lançamentos da data, em ordem de registro"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Parâmetros inválidos"
+          },
+          "401": {
+            "description": "Token ausente, inválido ou expirado (header WWW-Authenticate: Bearer)"
+          },
+          "403": {
+            "description": "Token válido, mas sem o escopo exigido pela operação"
+          },
+          "429": {
+            "description": "Limite de requisições por token excedido (aplicado pelo gateway)"
           }
         },
         "security": [
           {
             "bearer": []
           }
+        ],
+        "summary": "Lista os lançamentos de uma data",
+        "tags": [
+          "lancamentos"
         ]
       },
       "post": {
-        "tags": [
-          "lancamentos"
-        ],
-        "summary": "Registra um crédito ou débito",
         "description": "Idempotente pela Idempotency-Key: repetir a mesma requisição retorna o lançamento original (200).",
         "operationId": "register",
         "parameters": [
           {
-            "name": "Idempotency-Key",
-            "in": "header",
             "description": "Chave única por intenção de lançamento (8 a 100 caracteres)",
+            "example": "venda-0001-2026-10-13",
+            "in": "header",
+            "name": "Idempotency-Key",
             "required": true,
             "schema": {
-              "type": "string",
-              "pattern": "^[A-Za-z0-9_\\-:.]{8,100}$"
-            },
-            "example": "venda-0001-2026-10-13"
+              "pattern": "^[A-Za-z0-9_\\-:.]{8,100}$",
+              "type": "string"
+            }
           }
         ],
         "requestBody": {
@@ -162,49 +234,166 @@
         },
         "responses": {
           "200": {
-            "description": "OK",
             "content": {
-              "*/*": {
+              "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/EntryResponse"
                 }
               }
+            },
+            "description": "Repetição idempotente: mesma Idempotency-Key e mesmo payload; devolve o lançamento original",
+            "headers": {
+              "Idempotent-Replayed": {
+                "description": "Sempre \"true\"",
+                "style": "simple"
+              }
             }
+          },
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EntryResponse"
+                }
+              }
+            },
+            "description": "Lançamento criado",
+            "headers": {
+              "Location": {
+                "description": "URI do lançamento criado",
+                "style": "simple"
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Payload inválido ou Idempotency-Key ausente/fora do padrão"
+          },
+          "401": {
+            "description": "Token ausente, inválido ou expirado (header WWW-Authenticate: Bearer)"
+          },
+          "403": {
+            "description": "Token válido, mas sem o escopo exigido pela operação"
+          },
+          "409": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Idempotency-Key já usada com payload diferente"
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Regra de negócio violada (ex.: data futura, valor fora do limite)"
+          },
+          "429": {
+            "description": "Limite de requisições por token excedido (aplicado pelo gateway)"
           }
         },
         "security": [
           {
             "bearer": []
           }
+        ],
+        "summary": "Registra um crédito ou débito",
+        "tags": [
+          "lancamentos"
+        ]
+      }
+    },
+    "/api/v1/lancamentos/{id}": {
+      "get": {
+        "operationId": "get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EntryResponse"
+                }
+              }
+            },
+            "description": "Lançamento"
+          },
+          "401": {
+            "description": "Token ausente, inválido ou expirado (header WWW-Authenticate: Bearer)"
+          },
+          "403": {
+            "description": "Token válido, mas sem o escopo exigido pela operação"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Não encontrado para este comerciante"
+          },
+          "429": {
+            "description": "Limite de requisições por token excedido (aplicado pelo gateway)"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Consulta um lançamento pelo id",
+        "tags": [
+          "lancamentos"
         ]
       }
     },
     "/api/v1/lancamentos/{id}/estornos": {
       "post": {
-        "tags": [
-          "lancamentos"
-        ],
-        "summary": "Estorna um lançamento (cria lançamento inverso na data de hoje)",
         "operationId": "reverse",
         "parameters": [
           {
-            "name": "id",
             "in": "path",
+            "name": "id",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid"
+              "format": "uuid",
+              "type": "string"
             }
           },
           {
-            "name": "Idempotency-Key",
+            "example": "estorno-0001-2026-10-13",
             "in": "header",
+            "name": "Idempotency-Key",
             "required": true,
             "schema": {
-              "type": "string",
-              "pattern": "^[A-Za-z0-9_\\-:.]{8,100}$"
-            },
-            "example": "estorno-0001-2026-10-13"
+              "pattern": "^[A-Za-z0-9_\\-:.]{8,100}$",
+              "type": "string"
+            }
           }
         ],
         "requestBody": {
@@ -218,144 +407,162 @@
         },
         "responses": {
           "200": {
-            "description": "OK",
             "content": {
-              "*/*": {
+              "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/EntryResponse"
                 }
               }
+            },
+            "description": "Repetição idempotente do mesmo estorno",
+            "headers": {
+              "Idempotent-Replayed": {
+                "description": "Sempre \"true\"",
+                "style": "simple"
+              }
             }
+          },
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EntryResponse"
+                }
+              }
+            },
+            "description": "Estorno criado",
+            "headers": {
+              "Location": {
+                "description": "URI do estorno criado",
+                "style": "simple"
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Requisição inválida"
+          },
+          "401": {
+            "description": "Token ausente, inválido ou expirado (header WWW-Authenticate: Bearer)"
+          },
+          "403": {
+            "description": "Token válido, mas sem o escopo exigido pela operação"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Lançamento não encontrado para este comerciante"
+          },
+          "409": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Idempotency-Key já usada com payload diferente"
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Lançamento já estornado, ou tentativa de estornar um estorno"
+          },
+          "429": {
+            "description": "Limite de requisições por token excedido (aplicado pelo gateway)"
           }
         },
         "security": [
           {
             "bearer": []
           }
+        ],
+        "summary": "Estorna um lançamento (cria lançamento inverso na data de hoje)",
+        "tags": [
+          "lancamentos"
         ]
       }
     },
-    "/api/v1/lancamentos/{id}": {
-      "get": {
-        "tags": [
-          "lancamentos"
-        ],
-        "operationId": "get",
+    "/dev/token": {
+      "post": {
+        "description": "Sem merchantId, cria um comerciante novo. Copie o access_token e use em Authorize.",
+        "operationId": "token",
         "parameters": [
           {
-            "name": "id",
-            "in": "path",
-            "required": true,
+            "in": "query",
+            "name": "merchantId",
+            "required": false,
             "schema": {
-              "type": "string",
-              "format": "uuid"
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "scope",
+            "required": false,
+            "schema": {
+              "default": "lancamentos:write lancamentos:read consolidado:read",
+              "type": "string"
             }
           }
         ],
         "responses": {
           "200": {
-            "description": "OK",
             "content": {
               "*/*": {
                 "schema": {
-                  "$ref": "#/components/schemas/EntryResponse"
+                  "additionalProperties": {
+                    "type": "object"
+                  },
+                  "type": "object"
                 }
               }
-            }
+            },
+            "description": "OK"
           }
         },
-        "security": [
-          {
-            "bearer": []
-          }
+        "summary": "Gera um JWT de teste (somente profile local)",
+        "tags": [
+          "dev-token"
         ]
       }
     }
   },
-  "components": {
-    "schemas": {
-      "EntryRequest": {
-        "type": "object",
-        "properties": {
-          "date": {
-            "type": "string",
-            "format": "date",
-            "description": "Data financeira (fuso do comerciante)",
-            "example": "2026-10-13"
-          },
-          "type": {
-            "type": "string",
-            "enum": [
-              "CREDIT",
-              "DEBIT"
-            ],
-            "example": "CREDIT"
-          },
-          "amount": {
-            "type": "number",
-            "example": 150.75,
-            "minimum": 0.01
-          },
-          "description": {
-            "type": "string",
-            "example": "Venda balcão",
-            "maxLength": 200,
-            "minLength": 0
-          }
-        },
-        "required": [
-          "amount",
-          "date",
-          "type"
-        ]
-      },
-      "EntryResponse": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "date": {
-            "type": "string",
-            "format": "date"
-          },
-          "type": {
-            "type": "string"
-          },
-          "amount": {
-            "type": "number"
-          },
-          "description": {
-            "type": "string"
-          },
-          "reversalOf": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "createdAt": {
-            "type": "string",
-            "format": "date-time"
-          }
-        }
-      },
-      "ReversalRequest": {
-        "type": "object",
-        "properties": {
-          "reason": {
-            "type": "string",
-            "maxLength": 200,
-            "minLength": 0
-          }
-        }
-      }
+  "servers": [
+    {
+      "description": "Gateway que serviu esta especificação",
+      "url": "/"
     },
-    "securitySchemes": {
-      "bearer": {
-        "type": "http",
-        "scheme": "bearer",
-        "bearerFormat": "JWT"
-      }
+    {
+      "description": "Gateway local (Docker Compose, porta padrão)",
+      "url": "http://localhost:8080"
     }
-  }
+  ],
+  "tags": [
+    {
+      "description": "Registro, estorno e consulta de lançamentos",
+      "name": "lancamentos"
+    },
+    {
+      "description": "Emissão de token para testes locais (substitui o IdP)",
+      "name": "dev-token"
+    }
+  ]
 }

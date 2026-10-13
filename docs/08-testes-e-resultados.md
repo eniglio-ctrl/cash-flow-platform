@@ -6,6 +6,7 @@
 |---|---|---|---|
 | Unitário (domínio) | JUnit 5 + AssertJ | Regras RN-01..07, fuso da data financeira, estorno, cálculo do saldo, validação de evento | `*Test.java` |
 | Integração | Spring Boot Test + Testcontainers (PostgreSQL 16 e Kafka 3.9 reais) | API completa com JWT real, idempotência (incluindo concorrência), Outbox → Kafka, broker fora, consumo, deduplicação, DLQ, concorrência no UPSERT, isolamento entre comerciantes, 401/403 | `*IT.java` |
+| Contrato | Testes sobre o `/v3/api-docs` gerado + checagem no CI de `docs/api/` | Campos obrigatórios, códigos HTTP (201/200/4xx) e headers declarados batem com o comportamento real; cópias versionadas em dia com o código | `contratoOpenApi*` em `EntryApiIT` e `ConsolidationIT`, `scripts/export-openapi.sh` |
 | End-to-end / resiliência | Bash + Docker Compose | Cenário crítico: consolidado fora → 100 lançamentos → volta → saldo exato, sem duplicar | `scripts/e2e-resilience.sh` |
 | Carga | k6 | RNF de 50 req/s com ≤ 5% de falha; margem de 3x | `loadtest/consolidado-50rps.js` |
 | CI | GitHub Actions | Todos os acima a cada push/PR | `.github/workflows/ci.yml` |
@@ -26,8 +27,10 @@ Não há mocks de banco ou de broker nos testes de integração. As garantias da
 | `ConsolidationIT.aplicacaoConcorrenteMantemTotaisExatos` | 200 eventos × 2 entregas em 16 threads → totais exatos |
 | `ConsolidationIT.eventoInvalidoVaiParaDlqSemBloquearOsDemais` | Poison message na DLQ; o fluxo continua |
 | `ConsolidationIT.intervaloPreencheDiasSemMovimentoEEncadeiaSaldos` | Saldo acumulado entre dias |
+| `EntryApiIT.contratoOpenApiRefleteValidacoesECodigosReais` | `description` obrigatória no schema; 201/200/400/409/422 declarados no registro; headers `Location` e `Idempotent-Replayed` |
+| `ConsolidationIT.contratoOpenApiDeclaraRespostasReais` | 200/400/401/403/429 e header `X-Consistency` no consolidado |
 
-Resultado atual: 25 testes (9 unitários e 16 de integração), todos passando (`mvn verify`).
+Resultado atual: 27 testes (9 unitários, 16 de integração e 2 de contrato), todos passando (`mvn verify`).
 
 ## 8.3 Resultado: cenário crítico de indisponibilidade
 

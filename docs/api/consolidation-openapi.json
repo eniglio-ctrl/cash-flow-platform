@@ -1,168 +1,25 @@
 {
-  "openapi": "3.1.0",
-  "info": {
-    "title": "Consolidado diário",
-    "description": "Saldo diário consolidado (eventualmente consistente). No ambiente local a autorização é automática e vale para as duas APIs.",
-    "version": "v1"
-  },
-  "servers": [
-    {
-      "url": "/",
-      "description": "Gateway"
-    }
-  ],
-  "tags": [
-    {
-      "name": "consolidados",
-      "description": "Saldo consolidado por dia e por período"
-    },
-    {
-      "name": "admin",
-      "description": "Operação: reprocessamento da DLQ"
-    }
-  ],
-  "paths": {
-    "/api/v1/admin/dlq/replay": {
-      "post": {
-        "tags": [
-          "admin"
-        ],
-        "summary": "Reenvia mensagens da DLQ para o tópico principal (escopo consolidado:admin)",
-        "operationId": "replay",
-        "parameters": [
-          {
-            "name": "max",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "format": "int32",
-              "default": 100
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "type": "object",
-                  "additionalProperties": {
-                    "type": "integer",
-                    "format": "int32"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      }
-    },
-    "/api/v1/consolidados": {
-      "get": {
-        "tags": [
-          "consolidados"
-        ],
-        "summary": "Saldos consolidados de um intervalo (máx. 31 dias)",
-        "operationId": "range",
-        "parameters": [
-          {
-            "name": "from",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "date"
-            },
-            "example": "2026-10-01"
-          },
-          {
-            "name": "to",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "date"
-            },
-            "example": "2026-10-13"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/DailyBalance"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      }
-    },
-    "/api/v1/consolidados/{date}": {
-      "get": {
-        "tags": [
-          "consolidados"
-        ],
-        "summary": "Saldo consolidado de um dia",
-        "description": "Eventualmente consistente: o cabeçalho X-Consistency informa o modelo.",
-        "operationId": "day",
-        "parameters": [
-          {
-            "name": "date",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "date"
-            },
-            "example": "2026-10-13"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/DailyBalance"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      }
-    }
-  },
   "components": {
     "schemas": {
       "DailyBalance": {
-        "type": "object",
         "properties": {
+          "closingBalance": {
+            "type": "number"
+          },
           "date": {
-            "type": "string",
-            "format": "date"
+            "format": "date",
+            "type": "string"
+          },
+          "entriesCount": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "lastUpdatedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "netAmount": {
+            "type": "number"
           },
           "openingBalance": {
             "type": "number"
@@ -172,30 +29,265 @@
           },
           "totalDebits": {
             "type": "number"
-          },
-          "netAmount": {
-            "type": "number"
-          },
-          "closingBalance": {
-            "type": "number"
-          },
-          "entriesCount": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "lastUpdatedAt": {
-            "type": "string",
-            "format": "date-time"
           }
-        }
+        },
+        "type": "object"
+      },
+      "ProblemDetail": {
+        "properties": {
+          "detail": {
+            "type": "string"
+          },
+          "instance": {
+            "format": "uri",
+            "type": "string"
+          },
+          "properties": {
+            "additionalProperties": {
+              "type": "object"
+            },
+            "type": "object"
+          },
+          "status": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "title": {
+            "type": "string"
+          },
+          "type": {
+            "format": "uri",
+            "type": "string"
+          }
+        },
+        "type": "object"
       }
     },
     "securitySchemes": {
       "bearer": {
-        "type": "http",
+        "bearerFormat": "JWT",
         "scheme": "bearer",
-        "bearerFormat": "JWT"
+        "type": "http"
       }
     }
-  }
+  },
+  "info": {
+    "description": "Saldo diário consolidado (eventualmente consistente). No ambiente local a autorização é automática e vale para as duas APIs.",
+    "title": "Consolidado diário",
+    "version": "v1"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/api/v1/admin/dlq/replay": {
+      "post": {
+        "operationId": "replay",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "max",
+            "required": false,
+            "schema": {
+              "default": 100,
+              "format": "int32",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "additionalProperties": {
+                    "format": "int32",
+                    "type": "integer"
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Quantidade de mensagens reenviadas, ex.: {\"replayed\": 3}"
+          },
+          "401": {
+            "description": "Token ausente, inválido ou expirado (header WWW-Authenticate: Bearer)"
+          },
+          "403": {
+            "description": "Token válido, mas sem o escopo exigido pela operação"
+          },
+          "429": {
+            "description": "Limite de requisições por token excedido (aplicado pelo gateway)"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Reenvia mensagens da DLQ para o tópico principal (escopo consolidado:admin)",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/v1/consolidados": {
+      "get": {
+        "operationId": "range",
+        "parameters": [
+          {
+            "example": "2026-10-01",
+            "in": "query",
+            "name": "from",
+            "required": true,
+            "schema": {
+              "format": "date",
+              "type": "string"
+            }
+          },
+          {
+            "example": "2026-10-13",
+            "in": "query",
+            "name": "to",
+            "required": true,
+            "schema": {
+              "format": "date",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/DailyBalance"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Um item por dia do intervalo, com saldos encadeados",
+            "headers": {
+              "X-Consistency": {
+                "description": "Sempre \"eventual\": o saldo reflete os eventos já processados",
+                "style": "simple"
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Datas inválidas, 'to' anterior a 'from' ou intervalo acima de 31 dias"
+          },
+          "401": {
+            "description": "Token ausente, inválido ou expirado (header WWW-Authenticate: Bearer)"
+          },
+          "403": {
+            "description": "Token válido, mas sem o escopo exigido pela operação"
+          },
+          "429": {
+            "description": "Limite de requisições por token excedido (aplicado pelo gateway)"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Saldos consolidados de um intervalo (máx. 31 dias)",
+        "tags": [
+          "consolidados"
+        ]
+      }
+    },
+    "/api/v1/consolidados/{date}": {
+      "get": {
+        "description": "Eventualmente consistente: o cabeçalho X-Consistency informa o modelo.",
+        "operationId": "day",
+        "parameters": [
+          {
+            "example": "2026-10-13",
+            "in": "path",
+            "name": "date",
+            "required": true,
+            "schema": {
+              "format": "date",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DailyBalance"
+                }
+              }
+            },
+            "description": "Saldo do dia (dia sem movimento retorna totais zerados e saldo encadeado)",
+            "headers": {
+              "X-Consistency": {
+                "description": "Sempre \"eventual\": o saldo reflete os eventos já processados",
+                "style": "simple"
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Data inválida"
+          },
+          "401": {
+            "description": "Token ausente, inválido ou expirado (header WWW-Authenticate: Bearer)"
+          },
+          "403": {
+            "description": "Token válido, mas sem o escopo exigido pela operação"
+          },
+          "429": {
+            "description": "Limite de requisições por token excedido (aplicado pelo gateway)"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Saldo consolidado de um dia",
+        "tags": [
+          "consolidados"
+        ]
+      }
+    }
+  },
+  "servers": [
+    {
+      "description": "Gateway que serviu esta especificação",
+      "url": "/"
+    },
+    {
+      "description": "Gateway local (Docker Compose, porta padrão)",
+      "url": "http://localhost:8080"
+    }
+  ],
+  "tags": [
+    {
+      "description": "Saldo consolidado por dia e por período",
+      "name": "consolidados"
+    },
+    {
+      "description": "Operação: reprocessamento da DLQ",
+      "name": "admin"
+    }
+  ]
 }

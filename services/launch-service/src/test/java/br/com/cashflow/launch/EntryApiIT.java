@@ -187,6 +187,25 @@ class EntryApiIT {
         assertThat(list.getBody()).hasSize(2);
     }
 
+    @Test
+    void contratoOpenApiRefleteValidacoesECodigosReais() {
+        JsonNode api = http.getForObject("/v3/api-docs", JsonNode.class);
+
+        assertThat(api.at("/components/schemas/EntryRequest/required"))
+                .extracting(JsonNode::asText)
+                .containsExactlyInAnyOrder("date", "type", "amount", "description");
+
+        JsonNode register = api.at("/paths/~1api~1v1~1lancamentos/post/responses");
+        assertThat(register.fieldNames()).toIterable()
+                .contains("201", "200", "400", "401", "403", "409", "422", "429");
+        assertThat(register.at("/201/headers/Location").isMissingNode()).isFalse();
+        assertThat(register.at("/200/headers/Idempotent-Replayed").isMissingNode()).isFalse();
+
+        assertThat(api.at("/paths/~1api~1v1~1lancamentos~1{id}~1estornos/post/responses").fieldNames()).toIterable()
+                .contains("201", "200", "404", "409", "422");
+        assertThat(api.at("/servers/0/url").asText()).isEqualTo("/");
+    }
+
     // ---------- helpers ----------
 
     private Map<String, Object> body(String type, String amount, LocalDate date) {

@@ -2,6 +2,7 @@ package br.com.cashflow.consolidation.api;
 
 import br.com.cashflow.consolidation.infrastructure.messaging.DeadLetterReplayService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -25,6 +26,7 @@ public class AdminController {
 
     @PostMapping("/dlq/replay")
     @Operation(summary = "Reenvia mensagens da DLQ para o tópico principal (escopo consolidado:admin)")
+    @ApiResponse(responseCode = "200", description = "Quantidade de mensagens reenviadas, ex.: {\"replayed\": 3}")
     public Map<String, Integer> replay(@RequestParam(defaultValue = "100") int max) throws Exception {
         return Map.of("replayed", replay.replay(Math.min(Math.max(max, 1), 1000)));
     }

@@ -4,6 +4,12 @@ import br.com.cashflow.consolidation.application.BalanceQueryService;
 import br.com.cashflow.consolidation.domain.DailyBalance;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.headers.Header;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import org.springframework.http.ProblemDetail;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -36,6 +42,9 @@ public class BalanceController {
     @GetMapping("/{date}")
     @Operation(summary = "Saldo consolidado de um dia",
             description = "Eventualmente consistente: o cabeçalho X-Consistency informa o modelo.")
+    @ApiResponse(responseCode = "200", description = "Saldo do dia (dia sem movimento retorna totais zerados e saldo encadeado)",
+            headers = @Header(name = "X-Consistency", description = "Sempre \"eventual\": o saldo reflete os eventos já processados"), content = @Content(mediaType = "application/json", schema = @Schema(implementation = DailyBalance.class)))
+    @ApiResponse(responseCode = "400", description = "Data inválida", content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
     public ResponseEntity<DailyBalance> day(@AuthenticationPrincipal Jwt jwt,
                                             @Parameter(example = "2026-10-13") @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
         return ok(service.day(merchant(jwt), date));
@@ -43,6 +52,9 @@ public class BalanceController {
 
     @GetMapping
     @Operation(summary = "Saldos consolidados de um intervalo (máx. 31 dias)")
+    @ApiResponse(responseCode = "200", description = "Um item por dia do intervalo, com saldos encadeados", headers = @Header(name = "X-Consistency", description = "Sempre \"eventual\": o saldo reflete os eventos já processados"),
+            content = @Content(mediaType = "application/json", array = @ArraySchema(schema = @Schema(implementation = DailyBalance.class))))
+    @ApiResponse(responseCode = "400", description = "Datas inválidas, 'to' anterior a 'from' ou intervalo acima de 31 dias", content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
     public ResponseEntity<List<DailyBalance>> range(@AuthenticationPrincipal Jwt jwt,
                                                     @Parameter(example = "2026-10-01") @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
                                                     @Parameter(example = "2026-10-13") @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {

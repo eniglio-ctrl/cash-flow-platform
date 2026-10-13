@@ -76,7 +76,7 @@ docker compose --profile loadtest run --rm k6
 mvn verify
 ```
 
-São 25 testes: unitários e de integração com PostgreSQL e Kafka reais via Testcontainers (requer Docker).
+São 27 testes: unitários, de integração com PostgreSQL e Kafka reais via Testcontainers (requer Docker) e de contrato, que verificam se o OpenAPI gerado declara as validações e os códigos HTTP que a API de fato retorna.
 
 ### Encerrar
 
@@ -104,12 +104,14 @@ curl localhost:8080/api/v1/consolidados/2026-10-13 -H "Authorization: Bearer $TO
 | Método | Rota | Escopo | Descrição |
 |---|---|---|---|
 | POST | `/api/v1/lancamentos` | `lancamentos:write` | Registra crédito/débito. 201 novo · 200 reenvio idempotente · 409 chave reutilizada com outro payload · 422 regra de negócio |
-| POST | `/api/v1/lancamentos/{id}/estornos` | `lancamentos:write` | Estorna (lançamento inverso na data de hoje) |
-| GET | `/api/v1/lancamentos/{id}` | `lancamentos:read` | Consulta lançamento |
-| GET | `/api/v1/lancamentos?date=AAAA-MM-DD&page&size` | `lancamentos:read` | Lista por data |
-| GET | `/api/v1/consolidados/{data}` | `consolidado:read` | Saldo inicial, créditos, débitos, líquido, saldo final |
-| GET | `/api/v1/consolidados?from&to` | `consolidado:read` | Período (máx. 31 dias) |
-| POST | `/api/v1/admin/dlq/replay?max=100` | `consolidado:admin` | Reprocessa eventos da DLQ |
+| POST | `/api/v1/lancamentos/{id}/estornos` | `lancamentos:write` | Estorna (lançamento inverso na data de hoje). 201 · 200 idempotente · 404 · 409 · 422 já estornado |
+| GET | `/api/v1/lancamentos/{id}` | `lancamentos:read` | Consulta lançamento. 200 · 404 |
+| GET | `/api/v1/lancamentos?date=AAAA-MM-DD&page&size` | `lancamentos:read` | Lista por data. 200 · 400 |
+| GET | `/api/v1/consolidados/{data}` | `consolidado:read` | Saldo inicial, créditos, débitos, líquido, saldo final. 200 · 400 |
+| GET | `/api/v1/consolidados?from&to` | `consolidado:read` | Período (máx. 31 dias). 200 · 400 |
+| POST | `/api/v1/admin/dlq/replay?max=100` | `consolidado:admin` | Reprocessa eventos da DLQ. 200 |
+
+Em todas as rotas protegidas também podem ocorrer 401 (token ausente ou inválido), 403 (escopo insuficiente) e 429 (rate limit do gateway). Os erros seguem o formato RFC 9457 (`application/problem+json`). Campos obrigatórios no registro: `date`, `type`, `amount` e `description`.
 
 Exemplo de resposta do consolidado:
 
@@ -135,7 +137,31 @@ Acesse http://localhost:8080/swagger/. A página já abre autorizada: no ambient
 
 Para testar outro comerciante, use Authorize > Logout e recarregue a página.
 
-As chamadas passam pelo gateway, com o mesmo roteamento e rate limit do uso real. Os contratos OpenAPI 3 ficam versionados em [`docs/api/`](docs/api/) e também são servidos em `/openapi/*.json`.
+As chamadas passam pelo gateway, com o mesmo roteamento e rate limit do uso real.
+
+### Contratos OpenAPI
+
+Os contratos são gerados a partir do código (springdoc) e servidos pelo gateway em `/openapi/launch.json` e `/openapi/consolidation.json`. Cópias versionadas ficam em [`docs/api/`](docs/api/). Cada contrato declara dois servidores: o relativo `/`, usado pela Swagger UI, e `http://localhost:8080`, para quem abre o arquivo fora do gateway (ex.: Swagger Editor).
+
+Para atualizar as cópias após mudar a API (com a stack no ar):
+
+```bash
+./scripts/export-openapi.sh
+```
+
+O CI executa esse script e falha se o resultado divergir do que está versionado, e os testes de contrato falham se o OpenAPI deixar de refletir as validações e os códigos HTTP reais.
+
+## Limites do escopo
+
+O que foi entregue é a arquitetura alvo completa, documentada, e uma implementação executável dela em ambiente local. Alguns pontos são deliberadamente simplificados para que a avaliação rode com um único comando:
+
+- O alvo de produção (AWS: ECS Fargate, RDS Multi-AZ, MSK, API Gateway e WAF) está desenhado em [docs/03 §3.10](docs/03-arquitetura-alvo.md#310-arquitetura-de-implantação-produção-aws) e custeado em [docs/07](docs/07-custos.md), mas não foi demonstrado por uma implantação real em nuvem. Não há código de infraestrutura (Terraform) neste repositório.
+- A autenticação local usa um segredo HS256 conhecido, publicado no repositório, e o `POST /dev/token` emite tokens para qualquer comerciante e com os escopos que forem pedidos. Esse endpoint só existe no profile `local` e não deve ser exposto fora de uma máquina de desenvolvimento.
+- Kafka roda com um único broker, sem TLS, sem autenticação e sem ACLs, e as credenciais dos bancos estão no `docker-compose.yml`. Os controles equivalentes de produção estão descritos em [docs/04 §4.6](docs/04-seguranca.md#46-o-que-é-simplificado-localmente-e-por-quê).
+- Os resultados de carga e resiliência foram medidos num laptop, com todos os componentes no mesmo host. Validam o desenho e a ausência de gargalos, não substituem um teste de capacidade no ambiente de produção.
+- Os valores de custo são estimativas a partir de preços públicos, não uma fatura real.
+
+O que eu faria a seguir está em [docs/09](docs/09-evolucoes-futuras.md).
 
 ## Documentação de arquitetura
 
@@ -166,7 +192,7 @@ cash-flow-platform/
 │   ├── prometheus/              # scrape + regras de alerta (SLOs)
 │   └── grafana/                 # datasource e dashboard provisionados
 ├── loadtest/                    # k6 (50 e 150 req/s) + resultados
-├── scripts/                     # demo e cenário e2e de resiliência
+├── scripts/                     # demo, cenário e2e de resiliência e exportação dos contratos OpenAPI
 ├── docs/                        # arquitetura, requisitos, ADRs, custos...
 ├── docker-compose.yml
 ├── Dockerfile                   # build multi-stage (SERVICE=launch-service|consolidation-service)

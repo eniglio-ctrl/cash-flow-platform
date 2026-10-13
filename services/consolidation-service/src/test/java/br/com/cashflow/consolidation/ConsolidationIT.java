@@ -155,6 +155,18 @@ class ConsolidationIT {
         assertThat(day(TestTokens.issue(merchant, "lancamentos:read"), DAY).getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
     }
 
+    @Test
+    void contratoOpenApiDeclaraRespostasReais() {
+        JsonNode api = http.getForObject("/v3/api-docs", JsonNode.class);
+
+        assertThat(api.at("/paths/~1api~1v1~1consolidados~1{date}/get/responses").fieldNames()).toIterable()
+                .contains("200", "400", "401", "403", "429");
+        assertThat(api.at("/paths/~1api~1v1~1consolidados/get/responses").fieldNames()).toIterable()
+                .contains("200", "400", "401", "403", "429");
+        assertThat(api.at("/paths/~1api~1v1~1consolidados~1{date}/get/responses/200/headers/X-Consistency").isMissingNode())
+                .isFalse();
+    }
+
     // ---------- helpers ----------
 
     private EntryRegistered event(UUID m, LocalDate date, String type, String amount) {

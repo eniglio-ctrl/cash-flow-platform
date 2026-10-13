@@ -5,6 +5,11 @@ import br.com.cashflow.launch.application.EntryService;
 import br.com.cashflow.launch.application.RegisterEntryCommand;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.headers.Header;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -13,6 +18,7 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Pattern;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -53,6 +59,13 @@ public class EntryController {
     @PostMapping
     @Operation(summary = "Registra um crédito ou débito",
             description = "Idempotente pela Idempotency-Key: repetir a mesma requisição retorna o lançamento original (200).")
+    @ApiResponse(responseCode = "201", description = "Lançamento criado",
+            headers = @Header(name = "Location", description = "URI do lançamento criado"), content = @Content(mediaType = "application/json", schema = @Schema(implementation = EntryResponse.class)))
+    @ApiResponse(responseCode = "200", description = "Repetição idempotente: mesma Idempotency-Key e mesmo payload; devolve o lançamento original",
+            headers = @Header(name = "Idempotent-Replayed", description = "Sempre \"true\""), content = @Content(mediaType = "application/json", schema = @Schema(implementation = EntryResponse.class)))
+    @ApiResponse(responseCode = "400", description = "Payload inválido ou Idempotency-Key ausente/fora do padrão", content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
+    @ApiResponse(responseCode = "409", description = "Idempotency-Key já usada com payload diferente", content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
+    @ApiResponse(responseCode = "422", description = "Regra de negócio violada (ex.: data futura, valor fora do limite)", content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
     public ResponseEntity<EntryResponse> register(@AuthenticationPrincipal Jwt jwt,
                                                   @Parameter(description = "Chave única por intenção de lançamento (8 a 100 caracteres)", example = "venda-0001-2026-10-13")
                                                   @RequestHeader("Idempotency-Key") @Pattern(regexp = KEY_PATTERN) String key,
@@ -64,6 +77,14 @@ public class EntryController {
 
     @PostMapping("/{id}/estornos")
     @Operation(summary = "Estorna um lançamento (cria lançamento inverso na data de hoje)")
+    @ApiResponse(responseCode = "201", description = "Estorno criado",
+            headers = @Header(name = "Location", description = "URI do estorno criado"), content = @Content(mediaType = "application/json", schema = @Schema(implementation = EntryResponse.class)))
+    @ApiResponse(responseCode = "200", description = "Repetição idempotente do mesmo estorno",
+            headers = @Header(name = "Idempotent-Replayed", description = "Sempre \"true\""), content = @Content(mediaType = "application/json", schema = @Schema(implementation = EntryResponse.class)))
+    @ApiResponse(responseCode = "400", description = "Requisição inválida", content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
+    @ApiResponse(responseCode = "404", description = "Lançamento não encontrado para este comerciante", content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
+    @ApiResponse(responseCode = "409", description = "Idempotency-Key já usada com payload diferente", content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
+    @ApiResponse(responseCode = "422", description = "Lançamento já estornado, ou tentativa de estornar um estorno", content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
     public ResponseEntity<EntryResponse> reverse(@AuthenticationPrincipal Jwt jwt,
                                                  @PathVariable UUID id,
                                                  @Parameter(example = "estorno-0001-2026-10-13")
@@ -74,12 +95,18 @@ public class EntryController {
     }
 
     @GetMapping("/{id}")
+    @Operation(summary = "Consulta um lançamento pelo id")
+    @ApiResponse(responseCode = "200", description = "Lançamento", content = @Content(mediaType = "application/json", schema = @Schema(implementation = EntryResponse.class)))
+    @ApiResponse(responseCode = "404", description = "Não encontrado para este comerciante", content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
     public EntryResponse get(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id) {
         return EntryResponse.from(service.find(merchant(jwt), id));
     }
 
     @GetMapping
     @Operation(summary = "Lista os lançamentos de uma data")
+    @ApiResponse(responseCode = "200", description = "Lançamentos da data, em ordem de registro",
+            content = @Content(mediaType = "application/json", array = @ArraySchema(schema = @Schema(implementation = EntryResponse.class))))
+    @ApiResponse(responseCode = "400", description = "Parâmetros inválidos", content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
     public List<EntryResponse> list(@AuthenticationPrincipal Jwt jwt,
                                     @Parameter(example = "2026-10-13") @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
                                     @RequestParam(defaultValue = "0") @Min(0) int page,

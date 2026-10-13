@@ -60,3 +60,10 @@
 | HTTP sem TLS na rede do Compose | TLS na borda + mTLS interno |
 | Kafka PLAINTEXT, sem ACL | SASL/IAM + ACLs por tópico |
 | Credenciais no `docker-compose.yml` | Secrets Manager |
+| `POST /dev/token` aceita qualquer `merchantId` e os escopos que forem pedidos | Não existe: tokens vêm só do IdP, com escopos concedidos por política |
+| Swagger UI se autoriza sozinha com um token de teste | Swagger UI (se publicada) exige login no IdP |
+| Kafka com um broker (RF=1) | MSK com 3 brokers em AZs distintas (RF=3, `min.insync.replicas=2`) |
+
+Essas simplificações valem apenas para o ambiente local de demonstração. O endpoint `/dev/token` e o segredo HS256 versionado no repositório tornam qualquer instância exposta trivialmente acessível, por isso ficam restritos ao profile `local`, ativado apenas no `docker-compose.yml`.
+
+Os controles de produção descritos neste documento foram desenhados, mas não implantados nem testados num ambiente real de nuvem.

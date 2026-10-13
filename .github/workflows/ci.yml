@@ -25,6 +25,8 @@ jobs:
       - uses: actions/checkout@v4
       - name: Sobe a stack
         run: docker compose up -d --build --wait launch-service consolidation-service gateway
+      - name: Contratos OpenAPI versionados estão em dia com o código
+        run: ./scripts/export-openapi.sh && git diff --exit-code docs/api
       - name: Cenário de indisponibilidade do consolidado
         run: ./scripts/e2e-resilience.sh
       - name: Teste de carga (50 req/s e 150 req/s)
