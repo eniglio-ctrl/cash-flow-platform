@@ -22,7 +22,7 @@ Ordenado por valor/risco.
 13. Auditoria imutável (ledger append-only com hash encadeado) se houver exigência regulatória.
 
 ## Decisão consciente: sem portas e adaptadores na camada de aplicação
-Os casos de uso (`EntryService`, `ConsolidationService`) dependem diretamente dos repositórios concretos (`JdbcClient`). Em DDD/arquitetura hexagonal, eles dependeriam de interfaces (portas) implementadas pela infraestrutura (adaptadores).
+Os serviços de aplicação (`EntryService`, `ConsolidationService`) dependem de classes concretas de repositório (`EntryRepository`, `OutboxRepository`, `ConsolidationRepository`), que por sua vez usam `JdbcClient`. Os serviços não usam `JdbcClient` diretamente: o SQL fica isolado nos repositórios. Em DDD/arquitetura hexagonal, os serviços dependeriam de interfaces (portas) definidas pela aplicação e implementadas pela infraestrutura (adaptadores).
 
 Não fiz isso porque, neste escopo, os limites que importam já estão nas fronteiras de processo e de banco (um serviço e um banco por contexto). As garantias da solução também vivem no SQL (constraints, `ON CONFLICT`, `SKIP LOCKED`), e por isso são testadas contra o PostgreSQL real, não contra dublês. Introduziria as portas quando houver um segundo adaptador real (outro banco ou broker) ou necessidade de testar casos de uso sem infraestrutura. Pela mesma razão, não há sidecars: cada componente precisa resolver um problema concreto.
 

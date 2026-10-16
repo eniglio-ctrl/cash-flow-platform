@@ -115,7 +115,16 @@ curl localhost:8080/api/v1/consolidados/2026-10-13 -H "Authorization: Bearer $TO
 | GET | `/api/v1/consolidados?from&to` | `consolidado:read` | Período (máx. 31 dias). 200 · 400 |
 | POST | `/api/v1/admin/dlq/replay?max=100` | `consolidado:admin` | Reprocessa eventos da DLQ. 200 |
 
-Em todas as rotas protegidas também podem ocorrer 401 (token ausente ou inválido), 403 (escopo insuficiente) e 429 (rate limit do gateway). Limites por token: 100 req/s nos lançamentos, 200 req/s no consolidado e 1 req/s na rota administrativa; o `/dev/token` é limitado a 5 req/s por IP. Os erros seguem o formato RFC 9457 (`application/problem+json`). Campos obrigatórios no registro: `date`, `type`, `amount` e `description`.
+Em todas as rotas protegidas também podem ocorrer 401 (token ausente ou inválido), 403 (escopo insuficiente) e 429 (rate limit do gateway). Limites aplicados pelo gateway (nginx `limit_req` com `nodelay`):
+
+| Rota | Chave do limite | Taxa sustentada | Rajada extra (burst) |
+|---|---|---|---|
+| `/api/v1/lancamentos` | token | 100 req/s | 50 |
+| `/api/v1/consolidados` | token | 200 req/s | 100 |
+| `/api/v1/admin/` | token | 1 req/s | 2 |
+| `/dev/token` | IP | 5 req/s | 20 |
+
+O burst é a quantidade de requisições que pode passar de uma vez acima da taxa; com `nodelay`, elas são atendidas imediatamente, sem fila. Assim, numa rajada simultânea à rota administrativa, até 3 chamadas são aceitas (1 da taxa + 2 de burst) e as demais recebem 429. A capacidade de burst se recompõe na taxa sustentada. Os erros seguem o formato RFC 9457 (`application/problem+json`). Campos obrigatórios no registro: `date`, `type`, `amount` e `description`.
 
 Exemplo de resposta do consolidado:
 
