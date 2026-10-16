@@ -1,5 +1,6 @@
 package br.com.cashflow.launch;
 
+import br.com.cashflow.launch.application.EntryRegisteredEvent;
 import br.com.cashflow.launch.application.EntryResult;
 import br.com.cashflow.launch.application.EntryService;
 import br.com.cashflow.launch.application.IdempotencyConflictException;
@@ -8,6 +9,8 @@ import br.com.cashflow.launch.domain.Entry;
 import br.com.cashflow.launch.domain.EntryType;
 import br.com.cashflow.launch.infrastructure.persistence.EntryRepository;
 import br.com.cashflow.launch.support.Containers;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.micrometer.core.instrument.MeterRegistry;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -64,32 +67,39 @@ class IdempotencyRaceIT {
     @Autowired JdbcClient jdbc;
     @Autowired Clock clock;
     @Autowired MeterRegistry metrics;
+    @Autowired ObjectMapper json;
 
     private final ExecutorService pool = Executors.newFixedThreadPool(2);
     private final UUID merchant = UUID.randomUUID();
     private final String key = "race-" + UUID.randomUUID();
+    private final CountDownLatch aInserted = new CountDownLatch(1);
+    private final CountDownLatch releaseA = new CountDownLatch(1);
 
+    /** Rede de segurança: mesmo que uma asserção falhe no meio, a transação A nunca fica presa. */
     @AfterEach
-    void shutdown() {
+    void shutdown() throws InterruptedException {
+        releaseA.countDown();
         pool.shutdownNow();
+        pool.awaitTermination(10, TimeUnit.SECONDS);
     }
 
     @Test
     void requisicaoConcorrenteComMesmaChaveEMesmoConteudoRecebeOLancamentoVencedor() throws Exception {
         RegisterEntryCommand cmd = command("150.75", "Venda balcão");
-        CountDownLatch aInserted = new CountDownLatch(1);
-        CountDownLatch releaseA = new CountDownLatch(1);
         double racesBefore = races();
 
-        Future<Entry> a = pool.submit(() -> holdOpenTransaction(cmd, aInserted, releaseA));
-        assertThat(aInserted.await(10, TimeUnit.SECONDS)).isTrue();
-        assertThat(countEntries()).as("o lançamento de A ainda não foi confirmado").isZero();
+        Future<Entry> a = pool.submit(() -> holdOpenTransaction(cmd));
+        Future<EntryResult> b;
+        try {
+            assertThat(aInserted.await(10, TimeUnit.SECONDS)).isTrue();
+            assertThat(countEntries()).as("o lançamento de A ainda não foi confirmado").isZero();
 
-        Future<EntryResult> b = pool.submit(() -> service.register(cmd));
-        awaitBlockedOnLock();
-        assertThat(b.isDone()).as("B deve estar bloqueada pela transação de A").isFalse();
-
-        releaseA.countDown();
+            b = pool.submit(() -> service.register(cmd));
+            awaitBlockedOnLock();
+            assertThat(b.isDone()).as("B deve estar bloqueada pela transação de A").isFalse();
+        } finally {
+            releaseA.countDown();
+        }
         Entry winner = a.get(10, TimeUnit.SECONDS);
         EntryResult loser = b.get(10, TimeUnit.SECONDS);
 
@@ -97,23 +107,24 @@ class IdempotencyRaceIT {
         assertThat(loser.entry().id()).isEqualTo(winner.id());
         assertThat(countEntries()).isEqualTo(1);
         assertThat(countOutbox()).isEqualTo(1);
+        assertThat(pendingOutbox()).as("o evento de teste não deve ficar para o relay publicar").isZero();
         assertThat(races()).isEqualTo(racesBefore + 1);
     }
 
     @Test
     void requisicaoConcorrenteComMesmaChaveEConteudoDiferenteRecebeConflito() throws Exception {
-        CountDownLatch aInserted = new CountDownLatch(1);
-        CountDownLatch releaseA = new CountDownLatch(1);
         double racesBefore = races();
 
-        Future<Entry> a = pool.submit(() -> holdOpenTransaction(command("150.75", "Venda balcão"), aInserted, releaseA));
-        assertThat(aInserted.await(10, TimeUnit.SECONDS)).isTrue();
+        Future<Entry> a = pool.submit(() -> holdOpenTransaction(command("150.75", "Venda balcão")));
+        CompletableFuture<EntryResult> b;
+        try {
+            assertThat(aInserted.await(10, TimeUnit.SECONDS)).isTrue();
 
-        CompletableFuture<EntryResult> b = CompletableFuture.supplyAsync(
-                () -> service.register(command("999.00", "Outro conteúdo")), pool);
-        awaitBlockedOnLock();
-
-        releaseA.countDown();
+            b = CompletableFuture.supplyAsync(() -> service.register(command("999.00", "Outro conteúdo")), pool);
+            awaitBlockedOnLock();
+        } finally {
+            releaseA.countDown();
+        }
         a.get(10, TimeUnit.SECONDS);
 
         assertThatThrownBy(() -> b.get(10, TimeUnit.SECONDS))
@@ -130,26 +141,52 @@ class IdempotencyRaceIT {
                 new BigDecimal(amount), description);
     }
 
-    /** Transação A: grava o lançamento com a chave e só confirma quando o teste liberar. */
-    private Entry holdOpenTransaction(RegisterEntryCommand cmd, CountDownLatch inserted, CountDownLatch release) {
+    /**
+     * Transação A: grava o lançamento com a chave e só confirma quando o teste liberar.
+     * Se a espera expirar ou a thread for interrompida, a transação é desfeita (rollback).
+     */
+    private Entry holdOpenTransaction(RegisterEntryCommand cmd) {
         return tx.execute(status -> {
             Entry entry = Entry.register(cmd.merchantId(), cmd.entryDate(), cmd.type(), cmd.amount(),
                     cmd.description(), clock);
             entries.insert(entry, cmd.idempotencyKey(), cmd.fingerprint());
+            // Evento com payload válido e já marcado como publicado: o relay agendado não o envia ao Kafka.
             jdbc.sql("""
-                    INSERT INTO outbox_event (id, aggregate_id, partition_key, event_type, payload, created_at)
-                    VALUES (:id, :entry, :key, 'EntryRegistered', '{}'::jsonb, now())
+                    INSERT INTO outbox_event (id, aggregate_id, partition_key, event_type, payload, status,
+                                              created_at, published_at)
+                    VALUES (:id, :entry, :key, :type, CAST(:payload AS JSONB), 'SENT', now(), now())
                     """)
                     .param("id", UUID.randomUUID()).param("entry", entry.id()).param("key", merchant.toString())
+                    .param("type", EntryRegisteredEvent.TYPE).param("payload", toJson(EntryRegisteredEvent.of(entry)))
                     .update();
-            inserted.countDown();
+            aInserted.countDown();
             try {
-                release.await(30, TimeUnit.SECONDS);
+                if (!releaseA.await(30, TimeUnit.SECONDS)) {
+                    status.setRollbackOnly();
+                    throw new IllegalStateException("Transação A não foi liberada a tempo; rollback");
+                }
             } catch (InterruptedException e) {
+                status.setRollbackOnly();
                 Thread.currentThread().interrupt();
+                throw new IllegalStateException("Transação A interrompida; rollback", e);
             }
             return entry;
         });
+    }
+
+    private String toJson(Object value) {
+        try {
+            return json.writeValueAsString(value);
+        } catch (JsonProcessingException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    private long pendingOutbox() {
+        return jdbc.sql("""
+                SELECT count(*) FROM outbox_event o JOIN entry e ON e.id = o.aggregate_id
+                 WHERE e.merchant_id = :m AND o.status = 'PENDING'
+                """).param("m", merchant).query(Long.class).single();
     }
 
     /** Espera até que exista uma sessão bloqueada aguardando lock ao inserir na tabela entry. */

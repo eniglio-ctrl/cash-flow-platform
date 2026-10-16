@@ -37,7 +37,11 @@ git clone https://github.com/eniglio-ctrl/cash-flow-platform.git && cd cash-flow
 docker compose up -d --build --wait
 ```
 
-O primeiro build baixa as dependências Maven dentro do container (alguns minutos). Depois disso:
+O primeiro build baixa as dependências Maven dentro do container (alguns minutos).
+
+> Este Compose é exclusivamente para desenvolvimento e demonstração local. Todas as portas são publicadas apenas em `127.0.0.1`, para que nada fique acessível pela rede local, porque o ambiente ativa o emissor de tokens de teste (`/dev/token`) e usa credenciais conhecidas.
+
+Depois disso:
 
 | O quê | URL |
 |---|---|
@@ -111,7 +115,7 @@ curl localhost:8080/api/v1/consolidados/2026-10-13 -H "Authorization: Bearer $TO
 | GET | `/api/v1/consolidados?from&to` | `consolidado:read` | Período (máx. 31 dias). 200 · 400 |
 | POST | `/api/v1/admin/dlq/replay?max=100` | `consolidado:admin` | Reprocessa eventos da DLQ. 200 |
 
-Em todas as rotas protegidas também podem ocorrer 401 (token ausente ou inválido), 403 (escopo insuficiente) e 429 (rate limit do gateway). Os erros seguem o formato RFC 9457 (`application/problem+json`). Campos obrigatórios no registro: `date`, `type`, `amount` e `description`.
+Em todas as rotas protegidas também podem ocorrer 401 (token ausente ou inválido), 403 (escopo insuficiente) e 429 (rate limit do gateway). Limites por token: 100 req/s nos lançamentos, 200 req/s no consolidado e 1 req/s na rota administrativa; o `/dev/token` é limitado a 5 req/s por IP. Os erros seguem o formato RFC 9457 (`application/problem+json`). Campos obrigatórios no registro: `date`, `type`, `amount` e `description`.
 
 Exemplo de resposta do consolidado:
 
@@ -188,6 +192,7 @@ O que foi entregue é a arquitetura alvo completa, documentada, e uma implementa
 
 - O alvo de produção (AWS: ECS Fargate, RDS Multi-AZ, MSK, API Gateway e WAF) está desenhado em [docs/03 §3.10](docs/03-arquitetura-alvo.md#310-arquitetura-de-implantação-produção-aws) e custeado em [docs/07](docs/07-custos.md), mas não foi demonstrado por uma implantação real em nuvem. Não há código de infraestrutura (Terraform) neste repositório.
 - A autenticação local usa um segredo HS256 conhecido, publicado no repositório, e o `POST /dev/token` emite tokens para qualquer comerciante e com os escopos que forem pedidos. Esse endpoint só existe no profile `local` e não deve ser exposto fora de uma máquina de desenvolvimento.
+- Por isso o `docker-compose.yml` publica todas as portas apenas em `127.0.0.1` e se declara, no cabeçalho, como ambiente exclusivo de desenvolvimento.
 - Kafka roda com um único broker, sem TLS, sem autenticação e sem ACLs, e as credenciais dos bancos estão no `docker-compose.yml`. Os controles equivalentes de produção estão descritos em [docs/04 §4.6](docs/04-seguranca.md#46-o-que-é-simplificado-localmente-e-por-quê).
 - Os resultados de carga e resiliência foram medidos num laptop, com todos os componentes no mesmo host. Validam o desenho e a ausência de gargalos, não substituem um teste de capacidade no ambiente de produção.
 - Os valores de custo são estimativas a partir de preços públicos, não uma fatura real.

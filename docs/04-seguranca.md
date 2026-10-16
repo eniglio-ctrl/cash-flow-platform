@@ -8,7 +8,7 @@
 | Tampering | Alterar o valor de um lançamento já registrado | Lançamentos imutáveis (sem PUT/DELETE); correção só por estorno; TLS em trânsito. |
 | Repudiation | "Não fui eu que lancei" | Trilha: `created_at`, `traceId`/`X-Request-Id` nos logs, evento imutável no Kafka (retenção) e lançamento imutável no banco. |
 | Information disclosure | Ler o saldo de outro comerciante | Todas as consultas filtram por `merchant_id` do token. Um id de outro comerciante devolve 404, sem revelar que o recurso existe (teste `comercianteNaoEnxergaLancamentoDeOutro`). |
-| Denial of service | Rajada de requisições | Rate limit por token no gateway (429), payload ≤ 16 KB, timeouts, pool de conexões limitado, paginação com teto (200). |
+| Denial of service | Rajada de requisições | Rate limit no gateway (429): 100 req/s por token nos lançamentos, 200 no consolidado, 1 na rota administrativa e 5 req/s por IP no `/dev/token`. Payload ≤ 16 KB, timeouts, pool de conexões limitado, paginação com teto (200). |
 | Elevation of privilege | Token de leitura gravando lançamento | Escopos por operação: `lancamentos:write`, `lancamentos:read`, `consolidado:read`, `consolidado:admin`; `denyAll()` por padrão. |
 
 ## 4.2 Autenticação e autorização
@@ -58,6 +58,7 @@
 |---|---|
 | HS256 com segredo compartilhado e `/dev/token` | IdP corporativo, RS256 + JWKS |
 | HTTP sem TLS na rede do Compose | TLS na borda + mTLS interno |
+| Portas publicadas só em `127.0.0.1` (nada acessível pela rede local) | Exposição apenas via API Gateway + WAF; serviços em sub-redes privadas |
 | Kafka PLAINTEXT, sem ACL | SASL/IAM + ACLs por tópico |
 | Credenciais no `docker-compose.yml` | Secrets Manager |
 | `POST /dev/token` aceita qualquer `merchantId` e os escopos que forem pedidos | Não existe: tokens vêm só do IdP, com escopos concedidos por política |
