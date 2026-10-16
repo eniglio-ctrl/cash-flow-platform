@@ -211,7 +211,7 @@
         "operationId": "register",
         "parameters": [
           {
-            "description": "Chave única por intenção de lançamento (8 a 100 caracteres)",
+            "description": "Gerada pelo cliente para identificar uma operação de negócio (recomendado: UUID v4). Nova operação: nova chave. Retry da mesma operação (timeout, erro de rede, 5xx): reutilize a mesma chave. Mesma chave e mesmo conteúdo: 200 com o resultado original. Mesma chave e conteúdo diferente: 409. Única por comerciante entre todas as escritas; só é registrada quando a operação é concluída com sucesso; não expira. 8 a 100 caracteres: letras, dígitos, _ - : .",
             "example": "venda-0001-2026-10-13",
             "in": "header",
             "name": "Idempotency-Key",
@@ -386,6 +386,7 @@
             }
           },
           {
+            "description": "Gerada pelo cliente para identificar uma operação de negócio (recomendado: UUID v4). Nova operação: nova chave. Retry da mesma operação (timeout, erro de rede, 5xx): reutilize a mesma chave. Mesma chave e mesmo conteúdo: 200 com o resultado original. Mesma chave e conteúdo diferente: 409. Única por comerciante entre todas as escritas; só é registrada quando a operação é concluída com sucesso; não expira. 8 a 100 caracteres: letras, dígitos, _ - : .",
             "example": "estorno-0001-2026-10-13",
             "in": "header",
             "name": "Idempotency-Key",

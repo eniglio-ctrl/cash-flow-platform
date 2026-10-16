@@ -49,6 +49,11 @@ import java.util.UUID;
 public class EntryController {
 
     private static final String KEY_PATTERN = "^[A-Za-z0-9_\\-:.]{8,100}$";
+    private static final String KEY_DOC = "Gerada pelo cliente para identificar uma operação de negócio (recomendado: UUID v4). "
+            + "Nova operação: nova chave. Retry da mesma operação (timeout, erro de rede, 5xx): reutilize a mesma chave. "
+            + "Mesma chave e mesmo conteúdo: 200 com o resultado original. Mesma chave e conteúdo diferente: 409. "
+            + "Única por comerciante entre todas as escritas; só é registrada quando a operação é concluída com sucesso; não expira. "
+            + "8 a 100 caracteres: letras, dígitos, _ - : .";
 
     private final EntryService service;
 
@@ -67,7 +72,7 @@ public class EntryController {
     @ApiResponse(responseCode = "409", description = "Idempotency-Key já usada com payload diferente", content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
     @ApiResponse(responseCode = "422", description = "Regra de negócio violada (ex.: data futura, valor fora do limite)", content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
     public ResponseEntity<EntryResponse> register(@AuthenticationPrincipal Jwt jwt,
-                                                  @Parameter(description = "Chave única por intenção de lançamento (8 a 100 caracteres)", example = "venda-0001-2026-10-13")
+                                                  @Parameter(description = KEY_DOC, example = "venda-0001-2026-10-13")
                                                   @RequestHeader("Idempotency-Key") @Pattern(regexp = KEY_PATTERN) String key,
                                                   @Valid @RequestBody EntryRequest body) {
         EntryResult result = service.register(new RegisterEntryCommand(merchant(jwt), key, body.date(),
@@ -87,7 +92,7 @@ public class EntryController {
     @ApiResponse(responseCode = "422", description = "Lançamento já estornado, ou tentativa de estornar um estorno", content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
     public ResponseEntity<EntryResponse> reverse(@AuthenticationPrincipal Jwt jwt,
                                                  @PathVariable UUID id,
-                                                 @Parameter(example = "estorno-0001-2026-10-13")
+                                                 @Parameter(description = KEY_DOC, example = "estorno-0001-2026-10-13")
                                                  @RequestHeader("Idempotency-Key") @Pattern(regexp = KEY_PATTERN) String key,
                                                  @Valid @RequestBody(required = false) ReversalRequest body) {
         String reason = body == null ? null : body.reason();

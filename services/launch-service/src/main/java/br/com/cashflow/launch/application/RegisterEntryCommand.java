@@ -13,10 +13,14 @@ import java.util.UUID;
 public record RegisterEntryCommand(UUID merchantId, String idempotencyKey, LocalDate entryDate,
                                    EntryType type, BigDecimal amount, String description) {
 
-    /** Hash do conteúdo da requisição, usado para detectar reuso da chave com payload diferente. */
+    /**
+     * Hash do conteúdo da requisição, usado para detectar reuso da chave com payload diferente.
+     * O conteúdo é normalizado como o domínio o grava (valor sem zeros à direita, descrição sem
+     * espaços nas pontas), para que "10" e "10.00" ou "Venda" e " Venda " sejam a mesma operação.
+     */
     public String fingerprint() {
         return sha256("REGISTER|" + entryDate + "|" + type + "|" + amount.stripTrailingZeros().toPlainString()
-                + "|" + description);
+                + "|" + (description == null ? "" : description.strip()));
     }
 
     static String sha256(String value) {

@@ -90,6 +90,45 @@ class EntryApiIT {
     }
 
     @Test
+    void chaveNaoEConsumidaQuandoARequisicaoFalha() {
+        String key = "key-" + UUID.randomUUID();
+        assertThat(post(token, key, body("CREDIT", "1.00", TODAY.plusDays(1))).getStatusCode())
+                .isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
+
+        // o cliente corrige o payload e reenvia com a mesma chave: a operação é registrada
+        assertThat(post(token, key, body("CREDIT", "1.00", TODAY)).getStatusCode()).isEqualTo(HttpStatus.CREATED);
+    }
+
+    @Test
+    void chaveEUnicaEntreTodasAsEscritasDoComerciante() {
+        String key = "key-" + UUID.randomUUID();
+        String id = post(token, key, body("DEBIT", "8.00", TODAY)).getBody().get("id").asText();
+
+        ResponseEntity<JsonNode> reversalWithSameKey = exchange(HttpMethod.POST, token, key,
+                "/api/v1/lancamentos/" + id + "/estornos", Map.of("reason", "x"));
+        assertThat(reversalWithSameKey.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+    }
+
+    @Test
+    void mesmaChaveEmComerciantesDiferentesSaoOperacoesDistintas() {
+        String key = "key-" + UUID.randomUUID();
+        String other = TestTokens.issue(UUID.randomUUID(), WRITE_READ);
+
+        assertThat(post(token, key, body("CREDIT", "3.00", TODAY)).getStatusCode()).isEqualTo(HttpStatus.CREATED);
+        assertThat(post(other, key, body("CREDIT", "3.00", TODAY)).getStatusCode()).isEqualTo(HttpStatus.CREATED);
+    }
+
+    @Test
+    void conteudoEquivalenteAposNormalizacaoEConsideradoOMesmo() {
+        String key = "key-" + UUID.randomUUID();
+        Map<String, Object> first = Map.of("date", TODAY.toString(), "type", "CREDIT", "amount", "10", "description", "Venda");
+        Map<String, Object> retry = Map.of("date", TODAY.toString(), "type", "CREDIT", "amount", "10.00", "description", "  Venda ");
+
+        assertThat(post(token, key, first).getStatusCode()).isEqualTo(HttpStatus.CREATED);
+        assertThat(post(token, key, retry).getStatusCode()).isEqualTo(HttpStatus.OK);
+    }
+
+    @Test
     void mesmaChaveEMesmoPayloadRetornaOLancamentoOriginal() {
         String key = "key-" + UUID.randomUUID();
         ResponseEntity<JsonNode> first = post(token, key, body("DEBIT", "10.00", TODAY));

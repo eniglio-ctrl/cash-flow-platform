@@ -76,7 +76,7 @@ docker compose --profile loadtest run --rm k6
 mvn verify
 ```
 
-São 27 testes: unitários, de integração com PostgreSQL e Kafka reais via Testcontainers (requer Docker) e de contrato, que verificam se o OpenAPI gerado declara as validações e os códigos HTTP que a API de fato retorna.
+São 31 testes: unitários, de integração com PostgreSQL e Kafka reais via Testcontainers (requer Docker) e de contrato, que verificam se o OpenAPI gerado declara as validações e os códigos HTTP que a API de fato retorna.
 
 ### Encerrar
 
@@ -127,6 +127,37 @@ Exemplo de resposta do consolidado:
   "lastUpdatedAt": "2026-10-13T21:51:50.797375Z"
 }
 ```
+
+### Contrato de idempotência
+
+Toda escrita (`POST /lancamentos` e `POST /lancamentos/{id}/estornos`) exige o header `Idempotency-Key`. Ele protege contra lançamentos duplicados quando o cliente não sabe se a requisição anterior foi processada (timeout, queda de rede, 5xx).
+
+| Regra | Comportamento |
+|---|---|
+| Quem gera | O cliente (consumidor da API). O servidor nunca gera nem substitui a chave. |
+| Formato | 8 a 100 caracteres: letras, dígitos, `_ - : .`. Recomendado: UUID v4. |
+| Nova operação de negócio | Nova chave. |
+| Retry da mesma operação | Reutilizar a mesma chave, com o mesmo conteúdo. |
+| Escopo | Única por comerciante (`UNIQUE(merchant_id, idempotency_key)`), compartilhada entre registro e estorno. Comerciantes diferentes podem usar o mesmo valor. |
+| Mesma chave, mesmo conteúdo | `200 OK` com o lançamento original e o header `Idempotent-Replayed: true`. Nada é gravado de novo e nenhum evento novo é publicado. |
+| Mesma chave, conteúdo diferente | `409 Conflict`. |
+| Comparação de conteúdo | Hash SHA-256 do conteúdo normalizado: `10` e `10.00` são o mesmo valor, e espaços nas pontas da descrição são ignorados. |
+| Requisição rejeitada (400, 401, 403, 422) | A chave não é registrada: o cliente pode corrigir o payload e reenviar com a mesma chave. |
+| Requisições simultâneas com a mesma chave | Uma retorna 201; as demais, 200 com o mesmo lançamento. |
+| Validade | A chave não expira: fica gravada junto com o lançamento. |
+
+Fluxo recomendado no cliente:
+
+```text
+1. Gerar uma chave nova para a operação (ex.: UUID v4) e guardá-la junto com a intenção.
+2. Enviar o POST.
+3. Timeout, erro de rede ou 5xx  → reenviar com a MESMA chave e o MESMO conteúdo.
+4. 201 ou 200                    → operação concluída; descartar a chave.
+5. 409                           → bug no cliente: a chave foi reutilizada para outra operação.
+6. 400 ou 422                    → corrigir o payload; pode reenviar com a mesma chave.
+```
+
+Cada regra acima é verificada por testes de integração (`EntryApiIT`). Os detalhes de implementação estão no [ADR-0006](docs/adr/0006-idempotencia-ponta-a-ponta.md).
 
 ### Testando pelo navegador (Swagger UI)
 

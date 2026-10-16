@@ -21,7 +21,7 @@ Todos os requisitos abaixo estão implementados e cobertos por testes.
 | ID | Requisito | Critério de aceite |
 |---|---|---|
 | RF-01 | Registrar lançamento | `POST /api/v1/lancamentos` com data, tipo (CREDIT/DEBIT), valor e descrição. Retorna 201 com `Location`. |
-| RF-02 | Idempotência no registro | A mesma `Idempotency-Key` com o mesmo payload retorna o lançamento original (200, `Idempotent-Replayed: true`). Com payload diferente, 409. Requisições concorrentes geram um único lançamento. |
+| RF-02 | Idempotência no registro | A mesma `Idempotency-Key` com o mesmo payload retorna o lançamento original (200, `Idempotent-Replayed: true`). Com payload diferente, 409. Requisições concorrentes geram um único lançamento. A chave é gerada pelo cliente; contrato completo no [README](../README.md#contrato-de-idempotência). |
 | RF-03 | Estornar lançamento | `POST /lancamentos/{id}/estornos` cria lançamento oposto na data de hoje. Cada lançamento só pode ser estornado uma vez; um estorno não pode ser estornado. |
 | RF-04 | Consultar lançamentos | Por id e por data (paginado). |
 | RF-05 | Publicar fato financeiro | Todo lançamento confirmado gera exatamente um evento durável (Outbox), mesmo com o broker fora no momento do registro. |

@@ -13,6 +13,15 @@ Duplicidade aparece em dois pontos: o cliente reenvia após um timeout, e o brok
    - corrida entre requisições iguais → a constraint decide; a perdedora relê e devolve o vencedor.
 2. Consumidor: a tabela `processed_event` com PK em `event_id` (e `UNIQUE(entry_id)`) recebe o `INSERT … ON CONFLICT DO NOTHING` na mesma transação do UPSERT do saldo. Ou os dois acontecem, ou nenhum.
 
+### Contrato com o cliente
+- A chave é gerada pelo cliente e identifica uma operação de negócio; o servidor nunca a gera nem substitui.
+- Nova operação usa chave nova; retry da mesma operação reutiliza a mesma chave e o mesmo conteúdo.
+- A comparação usa o conteúdo normalizado como o domínio o grava (valor sem zeros à direita, descrição sem espaços nas pontas).
+- A chave só é registrada quando a operação é concluída; um 400 ou 422 não a consome.
+- A chave é única entre todas as escritas do comerciante (registro e estorno) e não expira.
+
+A tabela completa, com o fluxo recomendado no cliente, está no [README](../../README.md#contrato-de-idempotência).
+
 ## Consequências
 Positivas:
 
