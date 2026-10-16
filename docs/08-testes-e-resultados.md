@@ -18,7 +18,8 @@ Não há mocks de banco ou de broker nos testes de integração. As garantias da
 | Teste | Garante |
 |---|---|
 | `EntryApiIT.registraLancamentoEPublicaEventoNoKafkaViaOutbox` | RF-05: evento chega ao Kafka com chave = comerciante e outbox fica `SENT` |
-| `EntryApiIT.requisicoesConcorrentesComMesmaChaveGeramUmUnicoLancamento` | 10 POSTs simultâneos com a mesma chave → 1 lançamento (1×201, 9×200) |
+| `IdempotencyRaceIT` (2 testes) | Corrida forçada: a transação A fica aberta com a chave K; B, com a mesma chave, é confirmada como bloqueada no índice único (`pg_stat_activity`); ao liberar A, B devolve o lançamento de A (mesmo conteúdo) ou 409 (conteúdo diferente). Resultado: 1 lançamento e 1 evento na outbox. Validado por mutação: sem a constraint, o teste falha |
+| `EntryApiIT.requisicoesConcorrentesComMesmaChaveGeramUmUnicoLancamento` | 10 POSTs paralelos pela API com a mesma chave → 1 lançamento (1×201, 9×200) |
 | `EntryApiIT.mesmaChaveComPayloadDiferenteRetorna409` | Reuso indevido da chave é detectado |
 | `EntryApiIT.chaveNaoEConsumidaQuandoARequisicaoFalha` | Após um 422, a mesma chave com o payload corrigido registra a operação |
 | `EntryApiIT.chaveEUnicaEntreTodasAsEscritasDoComerciante` | Chave de um registro reutilizada num estorno retorna 409 |
@@ -34,7 +35,7 @@ Não há mocks de banco ou de broker nos testes de integração. As garantias da
 | `EntryApiIT.contratoOpenApiRefleteValidacoesECodigosReais` | `description` obrigatória no schema; 201/200/400/409/422 declarados no registro; headers `Location` e `Idempotent-Replayed` |
 | `ConsolidationIT.contratoOpenApiDeclaraRespostasReais` | 200/400/401/403/429 e header `X-Consistency` no consolidado |
 
-Resultado atual: 31 testes (9 unitários, 20 de integração e 2 de contrato), todos passando (`mvn verify`).
+Resultado atual: 33 testes (9 unitários, 22 de integração e 2 de contrato), todos passando (`mvn verify`).
 
 ## 8.3 Resultado: cenário crítico de indisponibilidade
 

@@ -76,7 +76,7 @@ docker compose --profile loadtest run --rm k6
 mvn verify
 ```
 
-São 31 testes: unitários, de integração com PostgreSQL e Kafka reais via Testcontainers (requer Docker) e de contrato, que verificam se o OpenAPI gerado declara as validações e os códigos HTTP que a API de fato retorna.
+São 33 testes: unitários, de integração com PostgreSQL e Kafka reais via Testcontainers (requer Docker) e de contrato, que verificam se o OpenAPI gerado declara as validações e os códigos HTTP que a API de fato retorna.
 
 ### Encerrar
 
@@ -143,7 +143,7 @@ Toda escrita (`POST /lancamentos` e `POST /lancamentos/{id}/estornos`) exige o h
 | Mesma chave, conteúdo diferente | `409 Conflict`. |
 | Comparação de conteúdo | Hash SHA-256 do conteúdo normalizado: `10` e `10.00` são o mesmo valor, e espaços nas pontas da descrição são ignorados. |
 | Requisição rejeitada (400, 401, 403, 422) | A chave não é registrada: o cliente pode corrigir o payload e reenviar com a mesma chave. |
-| Requisições simultâneas com a mesma chave | Uma retorna 201; as demais, 200 com o mesmo lançamento. |
+| Requisições simultâneas com a mesma chave | Uma retorna 201; as demais, 200 com o mesmo lançamento (ou 409, se o conteúdo for diferente). Quem decide é a constraint única no banco, não a aplicação. |
 | Validade | A chave não expira: fica gravada junto com o lançamento. |
 
 Fluxo recomendado no cliente:
@@ -157,7 +157,7 @@ Fluxo recomendado no cliente:
 6. 400 ou 422                    → corrigir o payload; pode reenviar com a mesma chave.
 ```
 
-Cada regra acima é verificada por testes de integração (`EntryApiIT`). Os detalhes de implementação estão no [ADR-0006](docs/adr/0006-idempotencia-ponta-a-ponta.md).
+Cada regra acima é verificada por testes de integração (`EntryApiIT`). A concorrência tem um teste determinístico (`IdempotencyRaceIT`): ele mantém aberta a transação de uma requisição, confirma pelo `pg_stat_activity` que a segunda está bloqueada no índice único e só então libera a primeira. O teste falha se a constraint for removida. Os detalhes de implementação estão no [ADR-0006](docs/adr/0006-idempotencia-ponta-a-ponta.md).
 
 ### Testando pelo navegador (Swagger UI)
 

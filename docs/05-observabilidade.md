@@ -20,6 +20,7 @@ A observabilidade deve responder rapidamente: quantos lançamentos entraram, qua
 | `cashflow_entries_registered_total{type,reversal}` | counter | Quantos lançamentos entraram? |
 | `cashflow_outbox_pending` | gauge | Quantos eventos aguardam o broker? (cresce = broker com problema) |
 | `cashflow_outbox_published_total` / `_failures_total` | counter | O relay está publicando? |
+| `cashflow_idempotency_races_total` | counter | Quantas requisições com a mesma chave chegaram juntas e foram resolvidas pela constraint única? |
 | `cashflow_consolidation_events_total{result=applied\|duplicate}` | counter | Taxa de aplicação e de duplicatas |
 | `cashflow_consolidation_freshness_seconds` | histogram | Quanto tempo leva do registro ao saldo? (SLO p95 < 5 s) |
 | `cashflow_consolidation_dlq_total` | counter | Algum evento foi para a DLQ? |

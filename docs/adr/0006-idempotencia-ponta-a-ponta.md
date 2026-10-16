@@ -10,7 +10,7 @@ Duplicidade aparece em dois pontos: o cliente reenvia após um timeout, e o brok
 1. API: o header `Idempotency-Key` é obrigatório. `UNIQUE(merchant_id, idempotency_key)` e um `request_hash` (SHA-256 do conteúdo).
    - mesma chave e mesmo conteúdo → 200 com o lançamento original (`Idempotent-Replayed: true`);
    - mesma chave e conteúdo diferente → 409;
-   - corrida entre requisições iguais → a constraint decide; a perdedora relê e devolve o vencedor.
+   - corrida entre requisições iguais → a constraint decide; a perdedora relê e devolve o vencedor (ou 409, se o conteúdo for diferente). A métrica `cashflow_idempotency_races_total` conta essas corridas.
 2. Consumidor: a tabela `processed_event` com PK em `event_id` (e `UNIQUE(entry_id)`) recebe o `INSERT … ON CONFLICT DO NOTHING` na mesma transação do UPSERT do saldo. Ou os dois acontecem, ou nenhum.
 
 ### Contrato com o cliente
@@ -26,7 +26,7 @@ A tabela completa, com o fluxo recomendado no cliente, está no [README](../../R
 Positivas:
 
 - Exactly-once efetivo sobre infraestrutura at-least-once.
-- Testado: 10 POSTs concorrentes com a mesma chave geram 1 lançamento; 200 eventos entregues 2× em paralelo resultam em totais exatos.
+- Testado: o `IdempotencyRaceIT` força a pior intercalação (transação A aberta, B bloqueada no índice único, confirmação via `pg_stat_activity`) e verifica 1 lançamento e 1 evento na outbox. Removendo a constraint, o teste falha. No consumidor, 200 eventos entregues 2× em paralelo resultam em totais exatos.
 
 Negativas:
 

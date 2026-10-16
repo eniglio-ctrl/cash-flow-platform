@@ -98,6 +98,8 @@ public class EntryService {
         try {
             return new EntryResult(tx.execute(status -> creation.get()), false);
         } catch (DuplicateKeyException race) {
+            // Outra requisição com a mesma chave confirmou primeiro: a constraint única barrou esta.
+            metrics.counter("cashflow.idempotency.races").increment();
             return replay(merchantId, key, hash).orElseThrow(() -> race);
         }
     }
