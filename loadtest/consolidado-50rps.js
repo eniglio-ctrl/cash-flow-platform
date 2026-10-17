@@ -22,6 +22,7 @@ export const options = {
     'http_req_failed{scenario:pico_50rps}': ['rate<0.05', 'rate<0.01'],
     'http_req_failed{scenario:margem_150rps}': ['rate<0.05'],
     'http_req_duration{scenario:pico_50rps}': ['p(95)<200'],
+    'http_req_duration{scenario:margem_150rps}': ['p(95)<200'],
   },
 };
 

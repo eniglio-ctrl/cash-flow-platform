@@ -249,12 +249,12 @@ Avaliados: monólito modular, microsserviços, serverless e SOA/ESB. A escolha f
 flowchart TB
     user(["Clientes"]) --> waf["AWS WAF"] --> apigw["API Gateway (HTTP API)<br/>JWT authorizer · throttling"]
     apigw --> alb["ALB interno"]
-    subgraph vpc["VPC sa-east-1 — 2 AZs"]
+    subgraph vpc["VPC sa-east-1 — ECS e RDS em 2 AZs, MSK em 3 AZs"]
         alb --> ecsL["ECS Fargate<br/>launch-service ×2 (AZ a/b)"]
         alb --> ecsC["ECS Fargate<br/>consolidation-service ×2..6<br/>(autoscaling por CPU/RPS)"]
         ecsL --> rdsL[("RDS PostgreSQL<br/>Multi-AZ")]
         ecsC --> rdsC[("RDS PostgreSQL<br/>Multi-AZ (+ read replica opcional)")]
-        ecsL --> msk{{"Amazon MSK<br/>2-3 brokers, RF=3 em prod"}}
+        ecsL --> msk{{"Amazon MSK<br/>3 brokers (1 por AZ), RF=3"}}
         msk --> ecsC
     end
     sm["Secrets Manager"] -.-> ecsL & ecsC

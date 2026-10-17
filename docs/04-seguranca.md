@@ -63,7 +63,7 @@
 | Credenciais no `docker-compose.yml` | Secrets Manager |
 | `POST /dev/token` aceita qualquer `merchantId` e os escopos que forem pedidos | Não existe: tokens vêm só do IdP, com escopos concedidos por política |
 | Swagger UI se autoriza sozinha com um token de teste | Swagger UI (se publicada) exige login no IdP |
-| Kafka com um broker (RF=1) | MSK com 3 brokers em AZs distintas (RF=3, `min.insync.replicas=2`) |
+| Kafka com um broker (RF=1) | MSK com 3 brokers, um em cada AZ (RF=3, `min.insync.replicas=2`); custo em [docs/07](07-custos.md) |
 
 Essas simplificações valem apenas para o ambiente local de demonstração. O endpoint `/dev/token` e o segredo HS256 versionado no repositório tornam qualquer instância exposta trivialmente acessível, por isso ficam restritos ao profile `local`, ativado apenas no `docker-compose.yml`.
 

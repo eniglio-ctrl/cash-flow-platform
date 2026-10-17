@@ -24,7 +24,7 @@ Resumo de como cada requisito central foi tratado. Os detalhes e as alternativas
 | Requisito | Decisão | Evidência |
 |---|---|---|
 | Lançamentos não podem cair se o consolidado cair | Dois serviços com bancos próprios, integração assíncrona e Transactional Outbox. O launch não depende nem do broker. | `e2e-resilience.sh`: 100/100 aceitos com o consolidado fora; saldo exato ao voltar |
-| Consolidado com 50 req/s e ≤ 5% de perda | Read model pré-agregado, cache de TTL curto, réplicas sem estado, gateway com retry e rate limit | k6: 0% de erro, p95 de 4,5 ms a 50 req/s; 0% a 150 req/s; 0% com uma réplica morta durante a carga |
+| Consolidado com 50 req/s e ≤ 5% de perda | Read model pré-agregado, cache de TTL curto, réplicas sem estado, gateway com retry e rate limit | k6: 0% de erro a 50 req/s (p95 3,6 ms) e a 150 req/s (p95 2,3 ms); 0% com uma réplica morta durante a carga ([execuções versionadas](loadtest/results/)) |
 | Dinheiro não pode duplicar nem sumir | Idempotência na API (`Idempotency-Key`) e no consumidor (`event_id` na mesma transação do saldo); `NUMERIC(19,2)` | Testes com 10 POSTs concorrentes e 400 entregas paralelas |
 | Correções auditáveis | Lançamentos imutáveis; correção por estorno | `EntryApiIT.estornaUmaUnicaVez` |
 
@@ -203,6 +203,7 @@ O que foi entregue é a arquitetura alvo completa, documentada, e uma implementa
 - A autenticação local usa um segredo HS256 conhecido, publicado no repositório, e o `POST /dev/token` emite tokens para qualquer comerciante e com os escopos que forem pedidos. Esse endpoint só existe no profile `local` e não deve ser exposto fora de uma máquina de desenvolvimento.
 - Por isso o `docker-compose.yml` publica todas as portas apenas em `127.0.0.1` e se declara, no cabeçalho, como ambiente exclusivo de desenvolvimento.
 - Kafka roda com um único broker, sem TLS, sem autenticação e sem ACLs, e as credenciais dos bancos estão no `docker-compose.yml`. Os controles equivalentes de produção estão descritos em [docs/04 §4.6](docs/04-seguranca.md#46-o-que-é-simplificado-localmente-e-por-quê).
+- A garantia de não perder lançamentos confirmados vale para falhas do broker, do consolidado e da aplicação. Frente à perda do próprio banco de lançamentos, o RPO depende da replicação do RDS Multi-AZ em produção (desenhada, não implantada); localmente não há proteção contra a perda do volume. Detalhes em [docs/02 RNF-07](docs/02-requisitos.md#escopo-da-garantia-de-durabilidade-rnf-07).
 - Os resultados de carga e resiliência foram medidos num laptop, com todos os componentes no mesmo host. Validam o desenho e a ausência de gargalos, não substituem um teste de capacidade no ambiente de produção.
 - Os valores de custo são estimativas a partir de preços públicos, não uma fatura real.
 

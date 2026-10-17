@@ -8,7 +8,7 @@
 | Modelo de preço | On-demand, sem Savings Plans/Reserved (que reduziriam ~30–40%) |
 | Carga | Pico de 50 req/s no consolidado; média estimada de ~5 req/s somando as duas APIs (~13 M req/mês) |
 | Volume | ~1 M lançamentos/mês; retenção de 7 dias no Kafka; ~20 GB por banco no 1º ano |
-| Disponibilidade | Multi-AZ (2 AZs) em todos os componentes stateful |
+| Disponibilidade | Multi-AZ em todos os componentes stateful: RDS e ECS em 2 AZs; MSK em 3 AZs (1 broker por AZ, exigido por RF=3) |
 | Câmbio | Valores em USD/mês; converter na data do orçamento |
 
 > Observação: os valores são de referência, arredondados, para dimensionar a ordem de grandeza a partir dos preços públicos on-demand conhecidos. Antes de virar orçamento, devem ser validados na [AWS Pricing Calculator](https://calculator.aws/), porque os preços variam por região e mudam com o tempo. A conclusão de arquitetura (§7.4) não depende da precisão de ±20% dos números.
@@ -27,18 +27,18 @@ US$ 0. Toda a stack é open source com licenças permissivas: OpenJDK/Temurin (G
 | ECS Fargate: consolidation-service | 2 tasks × 0,5 vCPU / 1 GB (autoscaling até 6) | 60 – 70 (base) |
 | RDS PostgreSQL: launch | db.t4g.small Multi-AZ, 20 GB gp3 | 80 – 100 |
 | RDS PostgreSQL: consolidation | db.t4g.small Multi-AZ, 20 GB gp3 | 80 – 100 |
-| Amazon MSK (provisionado) | 2 brokers kafka.t3.small, 50 GB cada | 110 – 140 |
+| Amazon MSK (provisionado) | 3 brokers kafka.t3.small (1 por AZ), 50 GB cada; RF=3, `min.insync.replicas=2` | 165 – 210 |
 | API Gateway (HTTP API) | ~13 M req/mês | 15 – 25 |
 | ALB interno | 1 ALB + LCUs baixos | 25 – 35 |
 | NAT Gateway | 1 (ou VPC endpoints) + tráfego | 40 – 55 |
 | WAF | 1 Web ACL + regras gerenciadas | 10 – 20 |
 | Observabilidade | Managed Prometheus + Managed Grafana (1–2 editores) + CloudWatch Logs | 40 – 80 |
 | Secrets Manager, KMS, ECR, backups | — | 10 – 20 |
-| Total | | ≈ 530 – 715 |
+| Total | | ≈ 585 – 785 |
 
 ### Homologação
 
-O mesmo desenho em Single-AZ, 1 task por serviço, RDS `db.t4g.micro` e MSK com 2 brokers `t3.small` (ou Kafka em container). Ambientes desligados fora do horário comercial: ≈ 150 – 250 USD/mês.
+O mesmo desenho em Single-AZ, 1 task por serviço, RDS `db.t4g.micro` e MSK com 2 brokers `t3.small` e RF=2 (ou Kafka em container), já que homologação não precisa tolerar a perda de uma zona. Ambientes desligados fora do horário comercial: ≈ 150 – 250 USD/mês.
 
 ### Local / CI
 
@@ -46,7 +46,7 @@ Docker Compose e GitHub Actions (repositório público): US$ 0.
 
 ## 7.4 Leitura de arquitetura dos números
 
-1. Mensageria é o maior item isolado (~20% do total), e a carga atual não a exigiria. Isso foi pesado conscientemente no [ADR-0004](adr/0004-kafka.md): Kafka foi mantido por replay (reconstrução do read model) e por abrir caminho a novos consumidores (analytics, conciliação). Se o custo for a restrição dominante, SNS + SQS FIFO (`MessageGroupId = merchantId`) custaria poucos dólares por mês para esse volume. A troca afeta apenas o relay da Outbox e o listener, porque o contrato de evento e a Outbox continuam iguais.
+1. Mensageria é o maior item isolado (cerca de 27% do total: 165 – 210 de 585 – 785 USD/mês), e a carga atual não a exigiria. O custo vem da topologia que a durabilidade exige (3 brokers, RF=3), não do volume. Isso foi pesado conscientemente no [ADR-0004](adr/0004-kafka.md): Kafka foi mantido por replay (reconstrução do read model) e por abrir caminho a novos consumidores (analytics, conciliação). Se o custo for a restrição dominante, SNS + SQS FIFO (`MessageGroupId = merchantId`) custaria menos de 10 USD/mês para esse volume. Premissas: ~1 M eventos/mês, cada um publicado uma vez no SNS e entregue a uma fila SQS, com algumas requisições de API por mensagem (recebimento e exclusão), sem payload acima de 64 KB. A economia seria de 160 – 200 USD/mês, cerca de um quarto do total, sem contar o esforço de migração nem a perda do replay. A troca afeta apenas o relay da Outbox e o listener, porque o contrato de evento e a Outbox continuam iguais.
 2. Multi-AZ dobra o custo dos bancos, e é aí que o RNF de disponibilidade "se paga". Em homologação, Single-AZ.
 3. Compute é barato porque os serviços são leves: a carga de 50 req/s cabe numa fração de vCPU. Escalar por disponibilidade, e não por capacidade, mantém o custo baixo.
 4. Alavancas de economia: Savings Plans para Fargate/RDS (−30–40%), Graviton (já considerado: `t4g`), VPC endpoints no lugar do NAT, e desligar homologação à noite.

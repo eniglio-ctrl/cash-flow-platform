@@ -57,11 +57,13 @@ Os ~12 s incluem o boot das duas réplicas do consolidado.
 
 Ambiente: Docker Desktop num MacBook (Apple Silicon), stack completa via Compose, 2 réplicas do consolidado, 20 comerciantes com 30 dias de histórico, datas aleatórias.
 
-| Cenário | Requisições | Taxa de erro | p95 | Meta |
-|---|---|---|---|---|
-| 50 req/s por 60 s (requisito) | 3.000 | 0,00% | 4,5 ms | erro < 5% (SLO < 1%), p95 < 200 ms |
-| 150 req/s por 60 s (3× margem) | 9.001 | 0,00% | ~3 ms | erro < 5% |
-| 50 + 150 req/s com uma réplica morta (`docker kill`) em t=25 s | 12.001 | 0,00% | 3,9 ms | erro < 5% |
+| Cenário | Requisições | Taxa de erro | p95 | Meta | Execução (arquivo) |
+|---|---|---|---|---|---|
+| 50 req/s por 60 s (requisito) | 3.001 | 0,00% | 3,6 ms | erro < 5% (SLO < 1%), p95 < 200 ms | `last-run.txt` |
+| 150 req/s por 60 s (3× margem) | 9.000 | 0,00% | 2,3 ms | erro < 5%, p95 < 200 ms | `last-run.txt` |
+| 50 + 150 req/s com uma réplica morta (`docker kill`) em t=25 s | 12.001 | 0,00% | 3,9 ms (cenário de 50 req/s) | erro < 5% | `replica-failure-run.txt` |
+
+O p95 varia entre execuções no mesmo laptop: nas execuções feitas durante o projeto, o cenário de 50 req/s ficou entre 3,6 e 4,6 ms, sempre com 0% de erro. A tabela cita apenas os valores dos arquivos versionados. A execução com a réplica derrubada é anterior à inclusão do threshold de p95 do cenário de 150 req/s, por isso só o p95 do cenário de 50 req/s aparece nela.
 
 O terceiro cenário mostra a combinação de redundância e retry no gateway (`proxy_next_upstream`): a queda de uma instância durante o pico não gerou nenhuma requisição perdida. Saídas completas em `loadtest/results/`.
 

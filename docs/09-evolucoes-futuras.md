@@ -27,6 +27,6 @@ Os serviços de aplicação (`EntryService`, `ConsolidationService`) dependem de
 Não fiz isso porque, neste escopo, os limites que importam já estão nas fronteiras de processo e de banco (um serviço e um banco por contexto). As garantias da solução também vivem no SQL (constraints, `ON CONFLICT`, `SKIP LOCKED`), e por isso são testadas contra o PostgreSQL real, não contra dublês. Introduziria as portas quando houver um segundo adaptador real (outro banco ou broker) ou necessidade de testar casos de uso sem infraestrutura. Pela mesma razão, não há sidecars: cada componente precisa resolver um problema concreto.
 
 ## Decisões que eu revisitaria com dados reais
-- Kafka × SQS: se em 6 meses não surgir um segundo consumidor nem necessidade de replay, migrar para SNS/SQS reduz ~20% do custo de infraestrutura.
+- Kafka × SQS: se em 6 meses não surgir um segundo consumidor nem necessidade de replay, migrar para SNS/SQS reduz cerca de um quarto do custo estimado de infraestrutura.
 - Cache local × Redis: se o hit ratio por réplica cair com muitas réplicas.
 - Dois bancos × um cluster com dois databases em homologação, para reduzir custo.

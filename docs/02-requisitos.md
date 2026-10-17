@@ -51,12 +51,26 @@ Todos os requisitos abaixo estão implementados e cobertos por testes.
 | RNF-04 | Latência | p95 < 200 ms no GET consolidado; p95 < 300 ms no POST lançamento. | Consulta por chave primária e cache. | k6 e Grafana |
 | RNF-05 | Disponibilidade (produção) | Lançamentos 99,9%/mês; consolidado 99,5%/mês. | Multi-AZ, ≥ 2 réplicas, banco Multi-AZ. | SLO no Grafana/alertas |
 | RNF-06 | Atualização do consolidado | p95 < 5 s entre o registro e o reflexo no saldo, em operação normal. | Relay da Outbox a cada 500 ms; consumo paralelo por partição. | Métrica `cashflow_consolidation_freshness` |
-| RNF-07 | Durabilidade | RPO = 0 para lançamentos confirmados (201); nenhum evento perdido. | ACID + Outbox + `acks=all` + idempotência do produtor. | Testes de integração e e2e |
+| RNF-07 | Durabilidade | Nenhum lançamento confirmado (201) nem seu evento é perdido por falha do broker, do consolidado ou do processo da aplicação, enquanto o banco de lançamentos permanecer íntegro. RPO frente à perda do próprio banco: ver escopo abaixo. | ACID + Outbox + `acks=all` + idempotência do produtor. | Testes de integração e e2e |
 | RNF-08 | Recuperação | RTO < 15 min (produção); backlog drenado automaticamente após retorno. | Restart automático, offsets no Kafka, retenção de 7 dias. | e2e: 100 eventos drenados em ~12 s |
 | RNF-09 | Integridade | Nenhuma dupla contabilização. | Deduplicação por `event_id` na mesma transação da atualização; UPSERT atômico. | `ConsolidationIT` (400 entregas concorrentes de 200 eventos) |
 | RNF-10 | Segurança | Autenticação obrigatória, autorização por escopo, isolamento por comerciante, TLS em trânsito, segredos fora do código. | Ver [04-seguranca.md](04-seguranca.md). | Testes 401/403/isolamento |
 | RNF-11 | Observabilidade | Métricas RED, logs estruturados com `traceId`, tracing distribuído, alertas de SLO. | Ver [05-observabilidade.md](05-observabilidade.md). | Dashboard provisionado |
 | RNF-12 | Escalabilidade | Escala horizontal sem mudança de código. | Serviços sem estado; partições por comerciante; `SKIP LOCKED` no relay. | Compose com 2 réplicas |
+
+### Escopo da garantia de durabilidade (RNF-07)
+
+O que está demonstrado é que, uma vez retornado o 201, o lançamento e o evento estão no mesmo commit do PostgreSQL de lançamentos. A partir daí, nenhuma falha do Kafka, do consolidado ou do próprio processo da aplicação perde o lançamento ou o evento (Outbox, `acks=all`, produtor idempotente, consumo idempotente). Isso **não** cobre a perda do banco de lançamentos, que é a fonte da verdade; nesse caso o RPO é o da estratégia de replicação e backup do banco:
+
+| Cenário de falha | Ambiente local (Compose) | Produção (desenhada, não implantada) |
+|---|---|---|
+| Kafka, consolidado ou processo da aplicação | Sem perda (demonstrado por testes) | Sem perda |
+| Falha da instância do banco | Volume Docker local; sem réplica | RDS Multi-AZ com réplica síncrona em outra AZ: failover automático, RPO ≈ 0 |
+| Perda de uma zona de disponibilidade | Não se aplica | RDS Multi-AZ: RPO ≈ 0 |
+| Corrupção lógica ou exclusão acidental | Sem proteção | Restauração point-in-time: RPO de até ~5 min |
+| Perda da região inteira | Não se aplica | Não coberto pelo desenho atual. Exigiria réplica ou backup entre regiões (evolução) |
+
+Ou seja: RPO = 0 é a meta para falhas de componentes e de zona em produção, sustentada pela replicação síncrona do RDS Multi-AZ, e não uma propriedade que o código, sozinho, garante. Localmente não há proteção contra a perda do volume do banco.
 
 ### Interpretação do "no máximo 5% de perda"
 
