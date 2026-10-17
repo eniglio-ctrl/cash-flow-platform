@@ -1,11 +1,11 @@
- Container cashflow-k6-run-787803ec7e07 Creating 
- Container cashflow-k6-run-787803ec7e07 Created 
+ Container cashflow-k6-run-787803ec7e07 Creating
+ Container cashflow-k6-run-787803ec7e07 Created
 
-         /\      Grafana   /‾‾/  
-    /\  /  \     |\  __   /  /   
-   /  \/    \    | |/ /  /   ‾‾\ 
+         /\      Grafana   /‾‾/
+    /\  /  \     |\  __   /  /
+   /  \/    \    | |/ /  /   ‾‾\
   /          \   |   (  |  (‾)  |
- / __________ \  |_|\_\  \_____/ 
+ / __________ \  |_|\_\  \_____/
 
      execution: local
         script: /scripts/consolidado-50rps.js
@@ -18,243 +18,243 @@
 
 running (0m01.0s), 000/150 VUs, 18 complete and 0 interrupted iterations
 pico_50rps      [   1% ] 000/050 VUs  0m00.4s/1m0s  50.00 iters/s
-margem_150rps • [   0% ] waiting      1m04.6s      
+margem_150rps • [   0% ] waiting      1m04.6s
 
 running (0m02.0s), 000/150 VUs, 68 complete and 0 interrupted iterations
 pico_50rps      [   2% ] 000/050 VUs  0m01.4s/1m0s  50.00 iters/s
-margem_150rps • [   0% ] waiting      1m03.6s      
+margem_150rps • [   0% ] waiting      1m03.6s
 
 running (0m03.0s), 000/150 VUs, 118 complete and 0 interrupted iterations
 pico_50rps      [   4% ] 000/050 VUs  0m02.4s/1m0s  50.00 iters/s
-margem_150rps • [   0% ] waiting      1m02.6s      
+margem_150rps • [   0% ] waiting      1m02.6s
 
 running (0m04.0s), 000/150 VUs, 168 complete and 0 interrupted iterations
 pico_50rps      [   6% ] 000/050 VUs  0m03.4s/1m0s  50.00 iters/s
-margem_150rps • [   0% ] waiting      1m01.6s      
+margem_150rps • [   0% ] waiting      1m01.6s
 
 running (0m05.0s), 000/150 VUs, 218 complete and 0 interrupted iterations
 pico_50rps      [   7% ] 000/050 VUs  0m04.4s/1m0s  50.00 iters/s
-margem_150rps • [   0% ] waiting      1m00.6s      
+margem_150rps • [   0% ] waiting      1m00.6s
 
 running (0m06.0s), 000/150 VUs, 268 complete and 0 interrupted iterations
 pico_50rps      [   9% ] 000/050 VUs  0m05.4s/1m0s  50.00 iters/s
-margem_150rps • [   0% ] waiting      0m59.6s      
+margem_150rps • [   0% ] waiting      0m59.6s
 
 running (0m07.0s), 000/150 VUs, 318 complete and 0 interrupted iterations
 pico_50rps      [  11% ] 000/050 VUs  0m06.4s/1m0s  50.00 iters/s
-margem_150rps • [   0% ] waiting      0m58.6s      
+margem_150rps • [   0% ] waiting      0m58.6s
 
 running (0m08.0s), 000/150 VUs, 368 complete and 0 interrupted iterations
 pico_50rps      [  12% ] 000/050 VUs  0m07.4s/1m0s  50.00 iters/s
-margem_150rps • [   0% ] waiting      0m57.6s      
+margem_150rps • [   0% ] waiting      0m57.6s
 
 running (0m09.0s), 000/150 VUs, 418 complete and 0 interrupted iterations
 pico_50rps      [  14% ] 000/050 VUs  0m08.4s/1m0s  50.00 iters/s
-margem_150rps • [   0% ] waiting      0m56.6s      
+margem_150rps • [   0% ] waiting      0m56.6s
 
 running (0m10.0s), 000/150 VUs, 468 complete and 0 interrupted iterations
 pico_50rps      [  16% ] 000/050 VUs  0m09.4s/1m0s  50.00 iters/s
-margem_150rps • [   0% ] waiting      0m55.6s      
+margem_150rps • [   0% ] waiting      0m55.6s
 
 running (0m11.0s), 000/150 VUs, 518 complete and 0 interrupted iterations
 pico_50rps      [  17% ] 000/050 VUs  0m10.4s/1m0s  50.00 iters/s
-margem_150rps • [   0% ] waiting      0m54.6s      
+margem_150rps • [   0% ] waiting      0m54.6s
 
 running (0m12.0s), 000/150 VUs, 568 complete and 0 interrupted iterations
 pico_50rps      [  19% ] 000/050 VUs  0m11.4s/1m0s  50.00 iters/s
-margem_150rps • [   0% ] waiting      0m53.6s      
+margem_150rps • [   0% ] waiting      0m53.6s
 
 running (0m13.0s), 000/150 VUs, 618 complete and 0 interrupted iterations
 pico_50rps      [  21% ] 000/050 VUs  0m12.4s/1m0s  50.00 iters/s
-margem_150rps • [   0% ] waiting      0m52.6s      
+margem_150rps • [   0% ] waiting      0m52.6s
 
 running (0m14.0s), 000/150 VUs, 668 complete and 0 interrupted iterations
 pico_50rps      [  22% ] 000/050 VUs  0m13.4s/1m0s  50.00 iters/s
-margem_150rps • [   0% ] waiting      0m51.6s      
+margem_150rps • [   0% ] waiting      0m51.6s
 
 running (0m15.0s), 000/150 VUs, 718 complete and 0 interrupted iterations
 pico_50rps      [  24% ] 000/050 VUs  0m14.4s/1m0s  50.00 iters/s
-margem_150rps • [   0% ] waiting      0m50.6s      
+margem_150rps • [   0% ] waiting      0m50.6s
 
 running (0m16.0s), 000/150 VUs, 768 complete and 0 interrupted iterations
 pico_50rps      [  26% ] 000/050 VUs  0m15.4s/1m0s  50.00 iters/s
-margem_150rps • [   0% ] waiting      0m49.6s      
+margem_150rps • [   0% ] waiting      0m49.6s
 
 running (0m17.0s), 000/150 VUs, 818 complete and 0 interrupted iterations
 pico_50rps      [  27% ] 000/050 VUs  0m16.4s/1m0s  50.00 iters/s
-margem_150rps • [   0% ] waiting      0m48.6s      
+margem_150rps • [   0% ] waiting      0m48.6s
 
 running (0m18.0s), 000/150 VUs, 868 complete and 0 interrupted iterations
 pico_50rps      [  29% ] 000/050 VUs  0m17.4s/1m0s  50.00 iters/s
-margem_150rps • [   0% ] waiting      0m47.6s      
+margem_150rps • [   0% ] waiting      0m47.6s
 
 running (0m19.0s), 000/150 VUs, 918 complete and 0 interrupted iterations
 pico_50rps      [  31% ] 000/050 VUs  0m18.4s/1m0s  50.00 iters/s
-margem_150rps • [   0% ] waiting      0m46.6s      
+margem_150rps • [   0% ] waiting      0m46.6s
 
 running (0m20.0s), 000/150 VUs, 968 complete and 0 interrupted iterations
 pico_50rps      [  32% ] 000/050 VUs  0m19.4s/1m0s  50.00 iters/s
-margem_150rps • [   0% ] waiting      0m45.6s      
+margem_150rps • [   0% ] waiting      0m45.6s
 
 running (0m21.0s), 000/150 VUs, 1018 complete and 0 interrupted iterations
 pico_50rps      [  34% ] 000/050 VUs  0m20.4s/1m0s  50.00 iters/s
-margem_150rps • [   0% ] waiting      0m44.6s      
+margem_150rps • [   0% ] waiting      0m44.6s
 
 running (0m22.0s), 000/150 VUs, 1068 complete and 0 interrupted iterations
 pico_50rps      [  36% ] 000/050 VUs  0m21.4s/1m0s  50.00 iters/s
-margem_150rps • [   0% ] waiting      0m43.6s      
+margem_150rps • [   0% ] waiting      0m43.6s
 
 running (0m23.0s), 000/150 VUs, 1118 complete and 0 interrupted iterations
 pico_50rps      [  37% ] 000/050 VUs  0m22.4s/1m0s  50.00 iters/s
-margem_150rps • [   0% ] waiting      0m42.6s      
+margem_150rps • [   0% ] waiting      0m42.6s
 
 running (0m24.0s), 000/150 VUs, 1168 complete and 0 interrupted iterations
 pico_50rps      [  39% ] 000/050 VUs  0m23.4s/1m0s  50.00 iters/s
-margem_150rps • [   0% ] waiting      0m41.6s      
+margem_150rps • [   0% ] waiting      0m41.6s
 
 running (0m25.0s), 000/150 VUs, 1218 complete and 0 interrupted iterations
 pico_50rps      [  41% ] 000/050 VUs  0m24.4s/1m0s  50.00 iters/s
-margem_150rps • [   0% ] waiting      0m40.6s      
+margem_150rps • [   0% ] waiting      0m40.6s
 
 running (0m26.0s), 000/150 VUs, 1268 complete and 0 interrupted iterations
 pico_50rps      [  42% ] 000/050 VUs  0m25.4s/1m0s  50.00 iters/s
-margem_150rps • [   0% ] waiting      0m39.6s      
+margem_150rps • [   0% ] waiting      0m39.6s
 
 running (0m27.0s), 000/150 VUs, 1318 complete and 0 interrupted iterations
 pico_50rps      [  44% ] 000/050 VUs  0m26.4s/1m0s  50.00 iters/s
-margem_150rps • [   0% ] waiting      0m38.6s      
+margem_150rps • [   0% ] waiting      0m38.6s
 
 running (0m28.0s), 000/150 VUs, 1368 complete and 0 interrupted iterations
 pico_50rps      [  46% ] 000/050 VUs  0m27.4s/1m0s  50.00 iters/s
-margem_150rps • [   0% ] waiting      0m37.6s      
+margem_150rps • [   0% ] waiting      0m37.6s
 
 running (0m29.0s), 000/150 VUs, 1418 complete and 0 interrupted iterations
 pico_50rps      [  47% ] 000/050 VUs  0m28.4s/1m0s  50.00 iters/s
-margem_150rps • [   0% ] waiting      0m36.6s      
+margem_150rps • [   0% ] waiting      0m36.6s
 
 running (0m30.0s), 000/150 VUs, 1468 complete and 0 interrupted iterations
 pico_50rps      [  49% ] 000/050 VUs  0m29.4s/1m0s  50.00 iters/s
-margem_150rps • [   0% ] waiting      0m35.6s      
+margem_150rps • [   0% ] waiting      0m35.6s
 
 running (0m31.0s), 000/150 VUs, 1518 complete and 0 interrupted iterations
 pico_50rps      [  51% ] 000/050 VUs  0m30.4s/1m0s  50.00 iters/s
-margem_150rps • [   0% ] waiting      0m34.6s      
+margem_150rps • [   0% ] waiting      0m34.6s
 
 running (0m32.0s), 000/150 VUs, 1568 complete and 0 interrupted iterations
 pico_50rps      [  52% ] 000/050 VUs  0m31.4s/1m0s  50.00 iters/s
-margem_150rps • [   0% ] waiting      0m33.6s      
+margem_150rps • [   0% ] waiting      0m33.6s
 
 running (0m33.0s), 000/150 VUs, 1618 complete and 0 interrupted iterations
 pico_50rps      [  54% ] 000/050 VUs  0m32.4s/1m0s  50.00 iters/s
-margem_150rps • [   0% ] waiting      0m32.6s      
+margem_150rps • [   0% ] waiting      0m32.6s
 
 running (0m34.0s), 000/150 VUs, 1668 complete and 0 interrupted iterations
 pico_50rps      [  56% ] 000/050 VUs  0m33.4s/1m0s  50.00 iters/s
-margem_150rps • [   0% ] waiting      0m31.6s      
+margem_150rps • [   0% ] waiting      0m31.6s
 
 running (0m35.0s), 000/150 VUs, 1718 complete and 0 interrupted iterations
 pico_50rps      [  57% ] 000/050 VUs  0m34.4s/1m0s  50.00 iters/s
-margem_150rps • [   0% ] waiting      0m30.6s      
+margem_150rps • [   0% ] waiting      0m30.6s
 
 running (0m36.0s), 000/150 VUs, 1768 complete and 0 interrupted iterations
 pico_50rps      [  59% ] 000/050 VUs  0m35.4s/1m0s  50.00 iters/s
-margem_150rps • [   0% ] waiting      0m29.6s      
+margem_150rps • [   0% ] waiting      0m29.6s
 
 running (0m37.0s), 000/150 VUs, 1818 complete and 0 interrupted iterations
 pico_50rps      [  61% ] 000/050 VUs  0m36.4s/1m0s  50.00 iters/s
-margem_150rps • [   0% ] waiting      0m28.6s      
+margem_150rps • [   0% ] waiting      0m28.6s
 
 running (0m38.0s), 000/150 VUs, 1868 complete and 0 interrupted iterations
 pico_50rps      [  62% ] 000/050 VUs  0m37.4s/1m0s  50.00 iters/s
-margem_150rps • [   0% ] waiting      0m27.6s      
+margem_150rps • [   0% ] waiting      0m27.6s
 
 running (0m39.0s), 000/150 VUs, 1918 complete and 0 interrupted iterations
 pico_50rps      [  64% ] 000/050 VUs  0m38.4s/1m0s  50.00 iters/s
-margem_150rps • [   0% ] waiting      0m26.6s      
+margem_150rps • [   0% ] waiting      0m26.6s
 
 running (0m40.0s), 000/150 VUs, 1968 complete and 0 interrupted iterations
 pico_50rps      [  66% ] 000/050 VUs  0m39.4s/1m0s  50.00 iters/s
-margem_150rps • [   0% ] waiting      0m25.6s      
+margem_150rps • [   0% ] waiting      0m25.6s
 
 running (0m41.0s), 000/150 VUs, 2018 complete and 0 interrupted iterations
 pico_50rps      [  67% ] 000/050 VUs  0m40.4s/1m0s  50.00 iters/s
-margem_150rps • [   0% ] waiting      0m24.6s      
+margem_150rps • [   0% ] waiting      0m24.6s
 
 running (0m42.0s), 000/150 VUs, 2068 complete and 0 interrupted iterations
 pico_50rps      [  69% ] 000/050 VUs  0m41.4s/1m0s  50.00 iters/s
-margem_150rps • [   0% ] waiting      0m23.6s      
+margem_150rps • [   0% ] waiting      0m23.6s
 
 running (0m43.0s), 000/150 VUs, 2118 complete and 0 interrupted iterations
 pico_50rps      [  71% ] 000/050 VUs  0m42.4s/1m0s  50.00 iters/s
-margem_150rps • [   0% ] waiting      0m22.6s      
+margem_150rps • [   0% ] waiting      0m22.6s
 
 running (0m44.0s), 000/150 VUs, 2168 complete and 0 interrupted iterations
 pico_50rps      [  72% ] 000/050 VUs  0m43.4s/1m0s  50.00 iters/s
-margem_150rps • [   0% ] waiting      0m21.6s      
+margem_150rps • [   0% ] waiting      0m21.6s
 
 running (0m45.0s), 000/150 VUs, 2218 complete and 0 interrupted iterations
 pico_50rps      [  74% ] 000/050 VUs  0m44.4s/1m0s  50.00 iters/s
-margem_150rps • [   0% ] waiting      0m20.6s      
+margem_150rps • [   0% ] waiting      0m20.6s
 
 running (0m46.0s), 000/150 VUs, 2268 complete and 0 interrupted iterations
 pico_50rps      [  76% ] 000/050 VUs  0m45.4s/1m0s  50.00 iters/s
-margem_150rps • [   0% ] waiting      0m19.6s      
+margem_150rps • [   0% ] waiting      0m19.6s
 
 running (0m47.0s), 000/150 VUs, 2318 complete and 0 interrupted iterations
 pico_50rps      [  77% ] 000/050 VUs  0m46.4s/1m0s  50.00 iters/s
-margem_150rps • [   0% ] waiting      0m18.6s      
+margem_150rps • [   0% ] waiting      0m18.6s
 
 running (0m48.0s), 000/150 VUs, 2368 complete and 0 interrupted iterations
 pico_50rps      [  79% ] 000/050 VUs  0m47.4s/1m0s  50.00 iters/s
-margem_150rps • [   0% ] waiting      0m17.6s      
+margem_150rps • [   0% ] waiting      0m17.6s
 
 running (0m49.0s), 000/150 VUs, 2418 complete and 0 interrupted iterations
 pico_50rps      [  81% ] 000/050 VUs  0m48.4s/1m0s  50.00 iters/s
-margem_150rps • [   0% ] waiting      0m16.6s      
+margem_150rps • [   0% ] waiting      0m16.6s
 
 running (0m50.0s), 000/150 VUs, 2468 complete and 0 interrupted iterations
 pico_50rps      [  82% ] 000/050 VUs  0m49.4s/1m0s  50.00 iters/s
-margem_150rps • [   0% ] waiting      0m15.6s      
+margem_150rps • [   0% ] waiting      0m15.6s
 
 running (0m51.0s), 000/150 VUs, 2518 complete and 0 interrupted iterations
 pico_50rps      [  84% ] 000/050 VUs  0m50.4s/1m0s  50.00 iters/s
-margem_150rps • [   0% ] waiting      0m14.6s      
+margem_150rps • [   0% ] waiting      0m14.6s
 
 running (0m52.0s), 000/150 VUs, 2568 complete and 0 interrupted iterations
 pico_50rps      [  86% ] 000/050 VUs  0m51.4s/1m0s  50.00 iters/s
-margem_150rps • [   0% ] waiting      0m13.6s      
+margem_150rps • [   0% ] waiting      0m13.6s
 
 running (0m53.0s), 000/150 VUs, 2618 complete and 0 interrupted iterations
 pico_50rps      [  87% ] 000/050 VUs  0m52.4s/1m0s  50.00 iters/s
-margem_150rps • [   0% ] waiting      0m12.6s      
+margem_150rps • [   0% ] waiting      0m12.6s
 
 running (0m54.0s), 000/150 VUs, 2668 complete and 0 interrupted iterations
 pico_50rps      [  89% ] 000/050 VUs  0m53.4s/1m0s  50.00 iters/s
-margem_150rps • [   0% ] waiting      0m11.6s      
+margem_150rps • [   0% ] waiting      0m11.6s
 
 running (0m55.0s), 000/150 VUs, 2718 complete and 0 interrupted iterations
 pico_50rps      [  91% ] 000/050 VUs  0m54.4s/1m0s  50.00 iters/s
-margem_150rps • [   0% ] waiting      0m10.6s      
+margem_150rps • [   0% ] waiting      0m10.6s
 
 running (0m56.0s), 000/150 VUs, 2768 complete and 0 interrupted iterations
 pico_50rps      [  92% ] 000/050 VUs  0m55.4s/1m0s  50.00 iters/s
-margem_150rps • [   0% ] waiting      0m09.6s      
+margem_150rps • [   0% ] waiting      0m09.6s
 
 running (0m57.0s), 000/150 VUs, 2818 complete and 0 interrupted iterations
 pico_50rps      [  94% ] 000/050 VUs  0m56.4s/1m0s  50.00 iters/s
-margem_150rps • [   0% ] waiting      0m08.6s      
+margem_150rps • [   0% ] waiting      0m08.6s
 
 running (0m58.0s), 000/150 VUs, 2868 complete and 0 interrupted iterations
 pico_50rps      [  96% ] 000/050 VUs  0m57.4s/1m0s  50.00 iters/s
-margem_150rps • [   0% ] waiting      0m07.6s      
+margem_150rps • [   0% ] waiting      0m07.6s
 
 running (0m59.0s), 000/150 VUs, 2918 complete and 0 interrupted iterations
 pico_50rps      [  97% ] 000/050 VUs  0m58.4s/1m0s  50.00 iters/s
-margem_150rps • [   0% ] waiting      0m06.6s      
+margem_150rps • [   0% ] waiting      0m06.6s
 
 running (1m00.0s), 000/150 VUs, 2968 complete and 0 interrupted iterations
 pico_50rps      [  99% ] 000/050 VUs  0m59.4s/1m0s  50.00 iters/s
-margem_150rps • [   0% ] waiting      0m05.6s      
+margem_150rps • [   0% ] waiting      0m05.6s
 
 running (1m01.0s), 000/150 VUs, 3001 complete and 0 interrupted iterations
 pico_50rps    ✓ [ 100% ] 000/050 VUs  1m0s  50.00 iters/s
@@ -517,7 +517,7 @@ pico_50rps    ✓ [ 100% ] 000/050 VUs  1m0s          50.00 iters/s
 margem_150rps   [  99% ] 001/100 VUs  0m59.4s/1m0s  150.00 iters/s
 
 
-  █ THRESHOLDS 
+  █ THRESHOLDS
 
     http_req_duration{scenario:margem_150rps}
     ✓ 'p(95)<200' p(95)=2.25ms
@@ -533,7 +533,7 @@ margem_150rps   [  99% ] 001/100 VUs  0m59.4s/1m0s  150.00 iters/s
     ✓ 'rate<0.01' rate=0.00%
 
 
-  █ TOTAL RESULTS 
+  █ TOTAL RESULTS
 
     checks_total.......: 12001   95.527031/s
     checks_succeeded...: 100.00% 12001 out of 12001
@@ -545,7 +545,7 @@ margem_150rps   [  99% ] 001/100 VUs  0m59.4s/1m0s  150.00 iters/s
     http_req_duration..............: avg=1.61ms min=340.62µs med=1.32ms max=171.5ms  p(90)=2.3ms  p(95)=2.87ms
       { expected_response:true }...: avg=1.61ms min=340.62µs med=1.32ms max=171.5ms  p(90)=2.3ms  p(95)=2.87ms
       { scenario:margem_150rps }...: avg=1.33ms min=340.62µs med=1.19ms max=29.51ms  p(90)=1.89ms p(95)=2.25ms
-      { scenario:pico_50rps }......: avg=2.39ms min=755.83µs med=1.84ms max=154.64ms p(90)=3.08ms p(95)=3.6ms 
+      { scenario:pico_50rps }......: avg=2.39ms min=755.83µs med=1.84ms max=154.64ms p(90)=3.08ms p(95)=3.6ms
     http_req_failed................: 0.00%  0 out of 12221
       { scenario:margem_150rps }...: 0.00%  0 out of 9000
       { scenario:pico_50rps }......: 0.00%  0 out of 3001
@@ -554,7 +554,7 @@ margem_150rps   [  99% ] 001/100 VUs  0m59.4s/1m0s  150.00 iters/s
     EXECUTION
     iteration_duration.............: avg=1.76ms min=379.29µs med=1.44ms max=218.52ms p(90)=2.53ms p(95)=3.14ms
     iterations.....................: 12001  95.527031/s
-    vus............................: 0      min=0          max=1  
+    vus............................: 0      min=0          max=1
     vus_max........................: 150    min=150        max=150
 
     NETWORK
